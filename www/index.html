@@ -189,7 +189,7 @@
     <div id="sez-richieste" class="sezione">
       <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
         <h2 style="font-size:18px;">📞 Richieste</h2>
-        <button class="btn-primary" style="width:auto; margin:0; padding:10px 16px;" onclick="apriRichiesta()">+ Nuova</button>
+        <button class="btn-primary" style="width:auto; margin:0; padding:10px 16px;" onclick="apriNuovaRichiesta()">+ Nuova</button>
       </div>
       <div class="ricerca-box"><input type="text" id="ricerca-richiesta" placeholder="🔍 Cerca per nome, tel o email..." oninput="renderRichieste()"></div>
       <div id="richieste-container"></div>
@@ -198,7 +198,7 @@
     <!-- PRENOTAZIONI -->
     <div id="sez-prenotazioni" class="sezione">
       <div style="display:flex; gap:8px; margin-bottom:12px;">
-        <button class="btn-primary" style="margin:0; flex:2;" onclick="apriPrenotazione()">+ Nuova prenotazione</button>
+        <button class="btn-primary" style="margin:0; flex:2;" onclick="apriNuovaPrenotazione()">+ Nuova prenotazione</button>
       </div>
       <div class="ricerca-box"><input type="text" id="ricerca-pren" placeholder="🔍 Cerca per nome..." oninput="renderPrenotazioni()"></div>
       <div id="pren-container"></div>
@@ -497,33 +497,33 @@ function renderPrenotazioni() {
     });
 }
 
-function apriPrenotazione(p = null) {
-    if(p) {
-        $('titolo-pren').textContent = 'Modifica Prenotazione';
-        $('pren-id').value = p.id; $('pren-nome').value = p.nome_ospite; $('pren-telefono').value = p.telefono || ''; $('pren-email').value = p.email || '';
-        $('pren-checkin').value = p.check_in; $('pren-checkout').value = p.check_out;
-        $('pren-adulti').value = p.adulti; $('pren-prezzo-adulto').value = p.prezzo_adulto || '';
-        $('pren-note').value = p.note || '';
-        $('pren-bambini-container').innerHTML = '';
-        if(p.bambini) p.bambini.forEach(b => aggiungiBambino('pren-bambini-container', b.eta, b.prezzo));
-    } else {
-        $('titolo-pren').textContent = 'Nuova Prenotazione';
-        $('pren-id').value = ''; $('pren-nome').value = ''; $('pren-telefono').value = ''; $('pren-email').value = '';
-        $('pren-checkin').value = new Date().toISOString().slice(0,10);
-        const domani = new Date(); domani.setDate(domani.getDate()+1);
-        $('pren-checkout').value = domani.toISOString().slice(0,10);
-        $('pren-adulti').value = 1; $('pren-prezzo-adulto').value = ''; $('pren-note').value = '';
-        $('pren-bambini-container').innerHTML = '';
-    }
+function apriNuovaPrenotazione() {
+    $('titolo-pren').textContent = 'Nuova Prenotazione';
+    $('pren-id').value = ''; $('pren-nome').value = ''; $('pren-telefono').value = ''; $('pren-email').value = '';
+    $('pren-checkin').value = new Date().toISOString().slice(0,10);
+    const domani = new Date(); domani.setDate(domani.getDate()+1);
+    $('pren-checkout').value = domani.toISOString().slice(0,10);
+    $('pren-adulti').value = 1; $('pren-prezzo-adulto').value = ''; $('pren-note').value = '';
+    $('pren-bambini-container').innerHTML = '';
     
     $('pren-camera').innerHTML = db.camere.sort((a,b)=>a.numero-b.numero).map(c => `<option value="${c.numero}">Cam ${c.numero} - ${c.tipo_esteso}</option>`).join('');
-    if(p) $('pren-camera').value = p.camera_numero;
     $('modal-pren').classList.add('active');
 }
 
 function modificaPrenotazione(id) {
     const p = db.prenotazioni.find(x => x.id == id);
-    if(p) apriPrenotazione(p);
+    if(!p) return;
+    $('titolo-pren').textContent = 'Modifica Prenotazione';
+    $('pren-id').value = p.id; $('pren-nome').value = p.nome_ospite; $('pren-telefono').value = p.telefono || ''; $('pren-email').value = p.email || '';
+    $('pren-checkin').value = p.check_in; $('pren-checkout').value = p.check_out;
+    $('pren-adulti').value = p.adulti; $('pren-prezzo-adulto').value = p.prezzo_adulto || '';
+    $('pren-note').value = p.note || '';
+    $('pren-bambini-container').innerHTML = '';
+    if(p.bambini) p.bambini.forEach(b => aggiungiBambino('pren-bambini-container', b.eta, b.prezzo));
+    
+    $('pren-camera').innerHTML = db.camere.sort((a,b)=>a.numero-b.numero).map(c => `<option value="${c.numero}">Cam ${c.numero} - ${c.tipo_esteso}</option>`).join('');
+    $('pren-camera').value = p.camera_numero;
+    $('modal-pren').classList.add('active');
 }
 
 function salvaPrenotazione() {
@@ -593,27 +593,25 @@ function renderRichieste() {
     });
 }
 
-function apriRichiesta(r = null) {
-    if(r) {
-        $('richiesta-id').value = r.id; $('richiesta-nome').value = r.nome; $('richiesta-telefono').value = r.telefono || ''; $('richiesta-email').value = r.email || '';
-        $('richiesta-checkin').value = r.check_in || ''; $('richiesta-checkout').value = r.check_out || '';
-        $('richiesta-adulti').value = r.adulti; $('richiesta-prezzo-adulto').value = r.prezzo_adulto || '';
-        $('richiesta-trattamento').value = r.trattamento || ''; $('richiesta-note').value = r.note || '';
-        $('richiesta-bambini-container').innerHTML = '';
-        if(r.bambini) r.bambini.forEach(b => aggiungiBambino('richiesta-bambini-container', b.eta, b.prezzo));
-    } else {
-        $('richiesta-id').value = ''; $('richiesta-nome').value = ''; $('richiesta-telefono').value = ''; $('richiesta-email').value = '';
-        $('richiesta-checkin').value = ''; $('richiesta-checkout').value = '';
-        $('richiesta-adulti').value = 1; $('richiesta-prezzo-adulto').value = '';
-        $('richiesta-trattamento').value = ''; $('richiesta-note').value = '';
-        $('richiesta-bambini-container').innerHTML = '';
-    }
+function apriNuovaRichiesta() {
+    $('richiesta-id').value = ''; $('richiesta-nome').value = ''; $('richiesta-telefono').value = ''; $('richiesta-email').value = '';
+    $('richiesta-checkin').value = ''; $('richiesta-checkout').value = '';
+    $('richiesta-adulti').value = 1; $('richiesta-prezzo-adulto').value = '';
+    $('richiesta-trattamento').value = ''; $('richiesta-note').value = '';
+    $('richiesta-bambini-container').innerHTML = '';
     $('modal-richiesta').classList.add('active');
 }
 
 function modificaRichiesta(id) {
     const r = db.richieste.find(x => x.id == id);
-    if(r) apriRichiesta(r);
+    if(!r) return;
+    $('richiesta-id').value = r.id; $('richiesta-nome').value = r.nome; $('richiesta-telefono').value = r.telefono || ''; $('richiesta-email').value = r.email || '';
+    $('richiesta-checkin').value = r.check_in || ''; $('richiesta-checkout').value = r.check_out || '';
+    $('richiesta-adulti').value = r.adulti; $('richiesta-prezzo-adulto').value = r.prezzo_adulto || '';
+    $('richiesta-trattamento').value = r.trattamento || ''; $('richiesta-note').value = r.note || '';
+    $('richiesta-bambini-container').innerHTML = '';
+    if(r.bambini) r.bambini.forEach(b => aggiungiBambino('richiesta-bambini-container', b.eta, b.prezzo));
+    $('modal-richiesta').classList.add('active');
 }
 
 function salvaRichiesta() {
@@ -643,13 +641,25 @@ function cancellaRichiesta(id) {
 function trasformaInPrenotazione(id) {
     const r = db.richieste.find(x => x.id == id);
     if(!r) return;
-    const p = {
-        nome_ospite: r.nome, telefono: r.telefono, email: r.email,
-        check_in: r.check_in, check_out: r.check_out,
-        adulti: r.adulti, prezzo_adulto: r.prezzo_adulto,
-        bambini: r.bambini, note: "Trasformata da richiesta. " + (r.note || "")
-    };
-    apriPrenotazione(p);
+    
+    $('titolo-pren').textContent = 'Prenota da Richiesta';
+    $('pren-id').value = ''; 
+    $('pren-nome').value = r.nome; 
+    $('pren-telefono').value = r.telefono || ''; 
+    $('pren-email').value = r.email || '';
+    $('pren-checkin').value = r.check_in || new Date().toISOString().slice(0,10); 
+    $('pren-checkout').value = r.check_out || '';
+    $('pren-adulti').value = r.adulti || 1; 
+    $('pren-prezzo-adulto').value = r.prezzo_adulto || '';
+    $('pren-note').value = "Da richiesta: " + (r.note || '');
+    
+    $('pren-bambini-container').innerHTML = '';
+    if(r.bambini && r.bambini.length > 0) {
+        r.bambini.forEach(b => aggiungiBambino('pren-bambini-container', b.eta, b.prezzo));
+    }
+    
+    $('pren-camera').innerHTML = db.camere.sort((a,b)=>a.numero-b.numero).map(c => `<option value="${c.numero}">Cam ${c.numero} - ${c.tipo_esteso}</option>`).join('');
+    $('modal-pren').classList.add('active');
 }
 
 // ============================================
