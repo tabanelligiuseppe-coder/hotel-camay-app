@@ -326,7 +326,7 @@
 // ============================================
 const DB_KEY = 'hotelcamay_data';
 let db = { camere: [], prenotazioni: [], manutenzioni: [], richieste: [] };
-let numeroCameraSelezionata = null; // Variabile globale per il popup
+let numeroCameraSelezionata = null;
 
 function salvaDati() { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
 
@@ -405,7 +405,7 @@ function aggiornaOrologio() {
 setInterval(aggiornaOrologio, 30000);
 
 // ============================================
-// CAMERE (LOGICA BLINDATA)
+// CAMERE (LOGICA SEMPLIFICATA E DIRETTA)
 // ============================================
 function renderCamere() {
     const container = $('camere-container'); container.innerHTML = '';
@@ -415,23 +415,33 @@ function renderCamere() {
     piani.forEach(p => {
         const cams = db.camere.filter(c => c.piano === p).sort((a,b)=>a.numero-b.numero);
         if(cams.length === 0) return;
-        container.innerHTML += `<div class="piano-titolo">${nomiPiano[p]}</div><div class="camere-grid" id="grid-${p}"></div>`;
-        const grid = $(`grid-${p}`);
+        
+        const titolo = document.createElement('div');
+        titolo.className = 'piano-titolo';
+        titolo.textContent = nomiPiano[p];
+        container.appendChild(titolo);
+        
+        const grid = document.createElement('div');
+        grid.className = 'camere-grid';
         
         cams.forEach(c => {
             const card = document.createElement('div');
             card.className = `camera-card stato-${c.stato}`;
             card.innerHTML = `${c.fronte_mare ? '<div class="fm-badge">🌊</div>' : ''}<div class="numero">${c.numero}</div><div class="tipo">${c.tipo_esteso}</div><div class="stato-label">${c.stato.replace('_',' ')}</div>`;
             
-            // CLICK DIRETTO E SICURO
-            card.onclick = function() {
-                numeroCameraSelezionata = c.numero;
-                $('cam-num').textContent = c.numero;
-                $('modal-camera').classList.add('active');
-            };
+            // IL CLICK PASSA DIRETTAMENTE IL NUMERO DELLA CAMERA
+            card.onclick = () => apriModalCamera(c.numero);
+            
             grid.appendChild(card);
         });
+        container.appendChild(grid);
     });
+}
+
+function apriModalCamera(numero) {
+    numeroCameraSelezionata = numero;
+    $('cam-num').textContent = numero;
+    $('modal-camera').classList.add('active');
 }
 
 function cambiaStatoCamera(stato) {
