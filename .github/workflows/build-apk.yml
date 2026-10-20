@@ -17,12 +17,13 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install dependencies
-        run: npm install
+      - name: Init and Install dependencies
+        run: |
+          npm init -y
+          npm install @capacitor/core @capacitor/cli @capacitor/android
 
       - name: Build web app and add Capacitor
         run: |
-          npm install @capacitor/core @capacitor/cli @capacitor/android
           npx cap init "Hotel Camay" "it.hotelcamay.app" --web-dir=www
           npx cap add android
           npx cap sync
