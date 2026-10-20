@@ -21,6 +21,7 @@ jobs:
         run: |
           npm init -y
           npm install @capacitor/core @capacitor/cli @capacitor/android
+          npm install @capacitor/filesystem @capacitor/share
           npm install @capacitor/assets
 
       - name: Build web app and add Capacitor
