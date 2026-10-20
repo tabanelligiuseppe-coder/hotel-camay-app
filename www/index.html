@@ -3,456 +3,112 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hotel Camay - Gestionale</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<title>Hotel Camay - Gestionale Offline</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #f0f2f5; color: #1a1a1a; min-height: 100vh;
-    padding-bottom: 70px;
-  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; color: #1a1a1a; min-height: 100vh; padding-bottom: 75px; }
   .container { max-width: 1200px; margin: 0 auto; padding: 16px; }
-
-  #login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
-  .login-card { background: white; padding: 32px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 400px; }
-  .login-card h1 { margin-bottom: 8px; font-size: 24px; }
-  .login-card p { color: #666; margin-bottom: 24px; font-size: 14px; }
-  .login-card input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 12px; font-size: 16px; }
-  .login-card button { width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; }
-  .login-card button:hover { background: #1d4ed8; }
-  .login-card button:disabled { background: #93c5fd; cursor: not-allowed; }
-  #login-error { color: #dc2626; font-size: 14px; margin-top: 12px; min-height: 20px; }
-
   header { background: white; padding: 14px 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
-  header h1 { font-size: 18px; }
-  header .user-info { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #666; }
-  header button { padding: 6px 12px; background: #f3f4f6; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
-
-  nav.bottom-nav {
-    position: fixed; bottom: 0; left: 0; right: 0;
-    background: white; border-top: 1px solid #e5e7eb;
-    display: flex; justify-content: space-around; align-items: center;
-    padding: 8px 0; z-index: 50; box-shadow: 0 -2px 10px rgba(0,0,0,0.04);
-  }
-  nav.bottom-nav button {
-    flex: 1; background: none; border: none; cursor: pointer;
-    padding: 6px 4px; font-size: 11px; color: #6b7280;
-    display: flex; flex-direction: column; align-items: center; gap: 3px; font-weight: 500;
-  }
-  nav.bottom-nav button .icon { font-size: 20px; }
+  header h1 { font-size: 18px; display: flex; align-items: center; gap: 10px; }
+  .logo-header { width: 32px; height: 32px; border-radius: 50%; }
+  
+  /* NAV BAR PIÙ GRANDE E VISIBILE */
+  nav.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-around; align-items: center; padding: 10px 0; z-index: 50; box-shadow: 0 -2px 10px rgba(0,0,0,0.06); }
+  nav.bottom-nav button { flex: 1; background: none; border: none; cursor: pointer; padding: 4px 2px; font-size: 12px; color: #6b7280; display: flex; flex-direction: column; align-items: center; gap: 4px; font-weight: 600; }
+  nav.bottom-nav button .icon-wrapper { font-size: 22px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s; }
   nav.bottom-nav button.attivo { color: #2563eb; }
+  nav.bottom-nav button.attivo .icon-wrapper { background: #eff6ff; transform: scale(1.1); }
 
   .sezione { display: none; }
   .sezione.attiva { display: block; }
-
   .legend { display: flex; gap: 14px; flex-wrap: wrap; margin: 12px 0; padding: 10px 14px; background: white; border-radius: 8px; font-size: 12px; }
   .legend-item { display: flex; align-items: center; gap: 6px; }
   .dot { width: 11px; height: 11px; border-radius: 50%; }
-
-  /* FILTRI */
-  .filtri-piano {
-    display: flex; gap: 6px; overflow-x: auto; padding: 8px 0;
-    margin-bottom: 12px; -webkit-overflow-scrolling: touch;
-  }
-  .filtri-piano::-webkit-scrollbar { display: none; }
-  .filtri-piano button {
-    padding: 8px 14px; border: 1px solid #ddd; background: white;
-    border-radius: 20px; font-size: 13px; cursor: pointer;
-    white-space: nowrap; font-weight: 500;
-  }
-  .filtri-piano button.attivo { background: #2563eb; color: white; border-color: #2563eb; }
-  /* FILTRO DATE */
-  .filtro-date {
-    background: white; padding: 12px 14px; border-radius: 10px;
-    margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-  }
-  .filtro-date-riga {
-    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-    margin-bottom: 8px;
-  }
-  .filtro-date-riga:last-child { margin-bottom: 0; }
-  .filtro-date-label {
-    font-size: 13px; font-weight: 600; color: #374151;
-    margin-right: 4px;
-  }
-  .filtro-date input[type="date"] {
-    padding: 8px 10px; border: 1px solid #ddd; border-radius: 8px;
-    font-size: 14px; flex: 1; min-width: 130px; font-family: inherit;
-  }
-  .btn-cerca {
-    flex: 1; padding: 8px 16px; background: #2563eb; color: white;
-    border: none; border-radius: 8px; font-size: 14px;
-    font-weight: 600; cursor: pointer;
-  }
-  .btn-cerca:hover { background: #1d4ed8; }
-  .btn-reset {
-    padding: 8px 14px; background: #f3f4f6; color: #333;
-    border: none; border-radius: 8px; font-size: 14px;
-    font-weight: 600; cursor: pointer;
-  }
-  .btn-reset:hover { background: #e5e7eb; }
-  .riepilogo-disp {
-    margin-top: 10px; padding: 10px 12px;
-    background: #eff6ff; color: #1e40af;
-    border-radius: 8px; font-size: 13px; font-weight: 600;
-    border-left: 4px solid #2563eb;
-  }
-
-  /* SEZIONE PIANO */
-  .piano-titolo {
-    font-size: 16px; font-weight: 700; margin: 20px 0 8px 0;
-    display: flex; align-items: center; gap: 8px;
-    color: #1f2937;
-  }
-  .piano-titolo .badge-fm { font-size: 11px; background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
-
+  
+  .piano-titolo { font-size: 16px; font-weight: 700; margin: 20px 0 8px 0; color: #1f2937; }
   .camere-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
-  .camera-card {
-    background: white; border-radius: 10px; padding: 12px 10px;
-    text-align: center; cursor: pointer; transition: transform 0.1s;
-    border-left: 5px solid #ccc; user-select: none; position: relative;
-  }
+  .camera-card { background: white; border-radius: 10px; padding: 12px 10px; text-align: center; cursor: pointer; border-left: 5px solid #ccc; position: relative; }
   .camera-card:active { transform: scale(0.96); }
   .camera-card .numero { font-size: 24px; font-weight: 700; }
-  .camera-card .tipo { font-size: 10px; color: #888; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .camera-card .tipo { font-size: 10px; color: #888; margin-top: 2px; text-transform: uppercase; }
   .camera-card .stato-label { font-size: 11px; margin-top: 5px; font-weight: 600; }
-  .camera-card .ospite { font-size: 10px; color: #555; margin-top: 3px; font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .camera-card .fm-badge { position: absolute; top: 6px; right: 6px; font-size: 12px; }
+  .camera-card .fm-badge { position: absolute; top: 6px; right: 6px; font-size: 14px; }
 
-  .stato-libera { border-left-color: #10b981; }
-  .stato-libera .stato-label { color: #10b981; }
-  .stato-occupata { border-left-color: #ef4444; }
-  .stato-occupata .stato-label { color: #ef4444; }
-  .stato-da_pulire { border-left-color: #f59e0b; }
-  .stato-da_pulire .stato-label { color: #f59e0b; }
-  .stato-fuori_servizio { border-left-color: #6b7280; }
-  .stato-fuori_servizio .stato-label { color: #6b7280; }
-
-  .dot-libera { background: #10b981; }
-  .dot-occupata { background: #ef4444; }
-  .dot-da_pulire { background: #f59e0b; }
-  .dot-fuori_servizio { background: #6b7280; }
+  .stato-libera { border-left-color: #10b981; } .stato-libera .stato-label { color: #10b981; }
+  .stato-occupata { border-left-color: #ef4444; } .stato-occupata .stato-label { color: #ef4444; }
+  .stato-da_pulire { border-left-color: #f59e0b; } .stato-da_pulire .stato-label { color: #f59e0b; }
+  .stato-fuori_servizio { border-left-color: #6b7280; } .stato-fuori_servizio .stato-label { color: #6b7280; }
+  .dot-libera { background: #10b981; } .dot-occupata { background: #ef4444; } .dot-da_pulire { background: #f59e0b; } .dot-fuori_servizio { background: #6b7280; }
 
   .btn-primary { width: 100%; padding: 14px; background: #2563eb; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 12px; }
-  .btn-primary:hover { background: #1d4ed8; }
-
-  .form-card { background: white; padding: 20px; border-radius: 10px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
-
-  .pren-card {
-    background: white; padding: 16px; border-radius: 10px;
-    margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-    border-left: 4px solid #2563eb;
-  }
+  .pren-card { background: white; padding: 16px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border-left: 4px solid #2563eb; }
   .pren-card .intestazione { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
   .pren-card .nome { font-weight: 700; font-size: 16px; }
   .pren-card .camera-badge { background: #eff6ff; color: #2563eb; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: 700; }
   .pren-card .info { font-size: 13px; color: #555; margin-bottom: 3px; }
   .pren-card .actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
   .pren-card .actions button { padding: 7px 12px; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
-  .btn-checkin { background: #10b981; color: white; }
-  .btn-checkout { background: #f59e0b; color: white; }
-  .btn-modifica { background: #f3f4f6; color: #333; }
-  .btn-cancella { background: #fee2e2; color: #dc2626; }
-
-  .stato-badge { display: inline-block; padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
-  .badge-confermata { background: #dbeafe; color: #1e40af; }
-  .badge-in_corso { background: #d1fae5; color: #065f46; }
-  .badge-conclusa { background: #f3f4f6; color: #6b7280; }
-  .badge-cancellata { background: #fee2e2; color: #991b1b; }
-
-  .pulizie-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-top: 12px; }
-  .pulizia-card { background: white; border-radius: 10px; padding: 16px; text-align: center; border-left: 5px solid #f59e0b; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
-  .pulizia-card .numero { font-size: 28px; font-weight: 700; color: #f59e0b; }
-  .pulizia-card .tipo { font-size: 11px; color: #888; margin-bottom: 10px; }
-  .pulizia-card button { width: 100%; padding: 8px; background: #10b981; color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .btn-checkin { background: #10b981; color: white; } .btn-checkout { background: #f59e0b; color: white; } .btn-modifica { background: #f3f4f6; color: #333; } .btn-cancella { background: #fee2e2; color: #dc2626; }
 
   .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 100; overflow-y: auto; }
   .modal-overlay.active { display: flex; }
   .modal { background: white; border-radius: 12px; padding: 24px; width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto; }
   .modal h2 { margin-bottom: 16px; font-size: 20px; }
   .modal-stato-btn { width: 100%; padding: 14px; margin-bottom: 8px; border: 2px solid #e5e7eb; background: white; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 12px; }
-  .modal-stato-btn.attivo { border-color: #2563eb; background: #eff6ff; }
-  .modal-stato-btn[data-stato="pulita"] {
-    background: #ecfdf5;
-    color: #065f46;
-  }
-  .modal-stato-btn[data-stato="pulita"]:hover {
-    background: #d1fae5;
-  }
+  .modal-stato-btn[data-stato="pulita"] { background: #ecfdf5; color: #065f46; }
   .modal .chiudi { width: 100%; padding: 12px; background: #f3f4f6; border: none; border-radius: 8px; cursor: pointer; margin-top: 8px; font-size: 15px; }
-
-  .form-card label, .modal label { display: block; font-size: 13px; color: #555; margin-bottom: 4px; margin-top: 10px; font-weight: 500; }
-  .form-card input, .form-card select, .form-card textarea,
-  .modal input, .modal select, .modal textarea {
-    width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; font-family: inherit;
-  }
+  
+  .modal input, .modal select, .modal textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; margin-bottom: 10px; }
+  .modal label { display: block; font-size: 13px; color: #555; margin-bottom: 4px; font-weight: 500; }
   .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-  /* HOME PAGE */
-  .home-wrap {
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 16px 0 20px;
-  }
-  .home-logo-grande {
-    display: block;
-    width: 140px;
-    height: 140px;
-    margin: 8px auto 16px;
-    border-radius: 50%;
-    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.12);
-  }
-  .home-saluto {
-    text-align: center;
-    font-size: 22px;
-    font-weight: 700;
-    color: #1f2937;
-    margin-bottom: 4px;
-  }
-  .home-data {
-    text-align: center;
-    font-size: 14px;
-    color: #6b7280;
-    margin-bottom: 20px;
-    text-transform: capitalize;
-  }
-  .home-sezione-titolo {
-    font-size: 13px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #6b7280;
-    margin: 20px 0 10px 0;
-  }
-  .home-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 12px;
-  }
-  .stat-card {
-    background: white;
-    border-radius: 12px;
-    padding: 18px 14px;
-    text-align: center;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-    border-top: 4px solid #e5e7eb;
-  }
-  .stat-card.occupazione { border-top-color: #2563eb; }
-  .stat-card.arrivi { border-top-color: #10b981; }
-  .stat-card.partenze { border-top-color: #f59e0b; }
-  .stat-card.pulizie { border-top-color: #eab308; }
-  .stat-card.manutenzioni { border-top-color: #ef4444; }
-  .stat-numero {
-    font-size: 32px;
-    font-weight: 800;
-    color: #1f2937;
-    line-height: 1.1;
-  }
-  .stat-label {
-    font-size: 12px;
-    color: #6b7280;
-    margin-top: 6px;
-    font-weight: 500;
-  }
-  .home-azioni {
-    display: grid;
-    gap: 10px;
-  }
-  .azione-rapida {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 16px 18px;
-    background: white;
-    border: none;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: 600;
-    color: #1f2937;
-    cursor: pointer;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-    text-align: left;
-    transition: transform 0.1s, box-shadow 0.1s;
-    width: 100%;
-  }
-  .azione-rapida:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-  .azione-rapida:active { transform: scale(0.98); }
-  .azione-rapida .azione-icon {
-    font-size: 26px;
-    width: 42px;
-    height: 42px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #eff6ff;
-    border-radius: 10px;
-    flex-shrink: 0;
-  }
-  .azione-rapida .azione-testo { flex: 1; }
-  .azione-rapida .azione-testo small {
-    display: block;
-    font-size: 12px;
-    font-weight: 400;
-    color: #6b7280;
-    margin-top: 2px;
-  }
-  .azione-rapida.principale {
-    background: linear-gradient(135deg, #2563eb, #1d4ed8);
-    color: white;
-  }
-  .azione-rapida.principale .azione-icon { background: rgba(255,255,255,0.2); }
-  .azione-rapida.principale .azione-testo small { color: rgba(255,255,255,0.85); }
+  /* HOME PAGE E AZIONI RAPIDE PIÙ GRASSE */
+  .home-wrap { max-width: 720px; margin: 0 auto; padding: 16px 0 20px; }
+  .home-logo-grande { display: block; width: 140px; height: 140px; margin: 8px auto 16px; border-radius: 50%; box-shadow: 0 6px 20px rgba(37, 99, 235, 0.12); }
+  .home-saluto { text-align: center; font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .home-data { text-align: center; font-size: 14px; color: #6b7280; margin-bottom: 20px; }
+  .home-sezione-titolo { font-size: 13px; font-weight: 700; text-transform: uppercase; color: #6b7280; margin: 20px 0 10px 0; }
+  .home-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+  .stat-card { background: white; border-radius: 12px; padding: 18px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border-top: 4px solid #e5e7eb; }
+  .stat-card.occupazione { border-top-color: #2563eb; } .stat-card.arrivi { border-top-color: #10b981; } .stat-card.partenze { border-top-color: #f59e0b; } .stat-card.pulizie { border-top-color: #eab308; } .stat-card.manutenzioni { border-top-color: #ef4444; }
+  .stat-numero { font-size: 32px; font-weight: 800; color: #1f2937; }
+  .stat-label { font-size: 12px; color: #6b7280; margin-top: 6px; font-weight: 500; }
+  
+  .azione-rapida { display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; color: #1f2937; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.06); text-align: left; width: 100%; margin-bottom: 12px; border: 1px solid #e5e7eb; }
+  .azione-rapida:active { background: #f9fafb; }
+  .azione-rapida .azione-icon { font-size: 32px; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; background: #eff6ff; border-radius: 12px; flex-shrink: 0; }
+  .azione-rapida .azione-testo small { display: block; font-size: 13px; font-weight: 500; color: #6b7280; margin-top: 2px; }
 
-  /* PREVENTIVO */
-  .preventivo-wrap {
-    max-width: 720px;
-    margin: 0 auto;
-  }
-  .prev-form-card {
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-    margin-bottom: 16px;
-  }
-  .prev-form-card label {
-    display: block;
-    font-size: 13px;
-    color: #555;
-    margin-bottom: 4px;
-    margin-top: 12px;
-    font-weight: 600;
-  }
-  .prev-form-card label:first-child { margin-top: 0; }
-    .prev-form-card input,
-  .prev-form-card select,
-  .prev-form-card textarea {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-size: 15px;
-    font-family: inherit;
-  }
-  .prev-riepilogo {
-    background: #f0f9ff;
-    border-left: 4px solid #2563eb;
-    border-radius: 10px;
-    padding: 14px 16px;
-    margin-top: 16px;
-    font-size: 14px;
-    line-height: 1.7;
-  }
-  .prev-riepilogo strong { color: #1e40af; }
-  .prev-totale {
-    font-size: 20px;
-    font-weight: 800;
-    color: #2563eb;
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px dashed #93c5fd;
-  }
-  .prev-testo {
-    width: 100%;
-    min-height: 320px;
-    padding: 16px;
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
-    line-height: 1.5;
-    white-space: pre-wrap;
-    background: #fafafa;
-    resize: vertical;
-  }
-  .prev-azioni {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-top: 12px;
-  }
-  .prev-azioni button {
-    padding: 12px 14px;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .btn-copia { background: #2563eb; color: white; }
-  .btn-copia:hover { background: #1d4ed8; }
-  .btn-whatsapp { background: #25d366; color: white; }
-  .btn-whatsapp:hover { background: #1ebe5b; }
-  .btn-email { background: #f59e0b; color: white; }
-  .btn-email:hover { background: #d97706; }
-  .btn-stampa { background: #6b7280; color: white; }
-  .btn-stampa:hover { background: #4b5563; }
-  .btn-trasforma {
-    grid-column: 1 / -1;
-    background: #10b981;
-    color: white;
-    padding: 14px;
-    font-size: 15px;
-  }
-  .btn-trasforma:hover { background: #059669; }
-  .prev-vuoto {
-    text-align: center;
-    padding: 40px 20px;
-    color: #999;
-    font-size: 14px;
-  }  
-.logo-header {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    vertical-align: middle;
-    margin-right: 8px;
-  }
-  .loading { text-align: center; padding: 40px; color: #888; }
-  .vuoto { text-align: center; padding: 40px; color: #999; font-size: 14px; }
+  .preventivo-wrap { max-width: 720px; margin: 0 auto; }
+  .prev-form-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .prev-form-card label { display: block; font-size: 13px; color: #555; margin-bottom: 4px; margin-top: 12px; font-weight: 600; }
+  .prev-form-card input, .prev-form-card select, .prev-form-card textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; }
+  .prev-riepilogo { background: #f0f9ff; border-left: 4px solid #2563eb; border-radius: 10px; padding: 14px 16px; margin-top: 16px; font-size: 14px; line-height: 1.7; }
+  .prev-totale { font-size: 20px; font-weight: 800; color: #2563eb; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #93c5fd; }
+  .prev-testo { width: 100%; min-height: 320px; padding: 16px; border: 1px solid #ddd; border-radius: 10px; font-family: monospace; font-size: 12px; line-height: 1.5; background: #fafafa; }
+  .prev-azioni { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+  .prev-azioni button { padding: 14px; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; }
+  .btn-copia { background: #2563eb; color: white; } .btn-whatsapp { background: #25d366; color: white; } .btn-email { background: #f59e0b; color: white; } .btn-stampa { background: #6b7280; color: white; }
 
+  .ricerca-box { background:white; padding:12px 14px; border-radius:10px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+  .ricerca-box input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; }
+  
   .filtri { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
-  .filtri button { padding: 6px 12px; border: 1px solid #ddd; background: white; border-radius: 20px; font-size: 12px; cursor: pointer; }
+  .filtri button { padding: 8px 14px; border: 1px solid #ddd; background: white; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
   .filtri button.attivo { background: #2563eb; color: white; border-color: #2563eb; }
-
-  .info-occupazione {
-    background: white; padding: 12px 16px; border-radius: 8px;
-    margin-bottom: 12px; font-size: 13px; color: #555;
-    display: flex; justify-content: space-between; align-items: center;
-    flex-wrap: wrap; gap: 8px;
-  }
-  .info-occupazione strong { color: #1f2937; font-size: 15px; }
-  .btn-aggiorna {
-    padding: 6px 12px; background: #2563eb; color: white; border: none;
-    border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;
-  }
+  .info-occupazione { background: white; padding: 12px 16px; border-radius: 8px; margin-bottom: 12px; font-size: 14px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
 </style>
 </head>
 <body>
 
-<div id="login-screen">
-  <div class="login-card">
-    <h1>🏨 Hotel Camay</h1>
-    <p>Accedi al gestionale</p>
-    <input type="email" id="email" placeholder="Email" autocomplete="email">
-    <input type="password" id="password" placeholder="Password" autocomplete="current-password">
-    <button id="btn-login">Accedi</button>
-    <div id="login-error"></div>
-  </div>
-</div>
-
-<div id="app-screen" style="display:none;">
+<div id="app-screen">
   <header>
-        <h1><img src="logo.png" alt="Logo" class="logo-header" onerror="this.style.display='none'">Hotel Camay</h1>
-    <div class="user-info">
-      <span id="user-email"></span>
-      <button id="btn-logout">Esci</button>
-    </div>
+    <h1><img src="logo.png" alt="Logo" class="logo-header" onerror="this.style.display='none'">Hotel Camay</h1>
+    <div style="font-size: 13px; color: #666;">Tablet Reception</div>
   </header>
 
-   <div class="container">
-
+  <div class="container">
+    <!-- HOME -->
     <div id="sez-home" class="sezione attiva">
       <div class="home-wrap">
         <img src="logo.png" alt="Hotel Camay" class="home-logo-grande" onerror="this.style.display='none'">
@@ -461,1596 +117,500 @@
 
         <div class="home-sezione-titolo">Oggi in hotel</div>
         <div class="home-stats">
-          <div class="stat-card occupazione">
-            <div class="stat-numero" id="home-occ">—</div>
-            <div class="stat-label">Occupazione</div>
-          </div>
-          <div class="stat-card arrivi">
-            <div class="stat-numero" id="home-arrivi">—</div>
-            <div class="stat-label">Arrivi oggi</div>
-          </div>
-          <div class="stat-card partenze">
-            <div class="stat-numero" id="home-partenze">—</div>
-            <div class="stat-label">Partenze oggi</div>
-          </div>
-          <div class="stat-card pulizie">
-            <div class="stat-numero" id="home-pulizie">—</div>
-            <div class="stat-label">Da pulire</div>
-          </div>
-          <div class="stat-card manutenzioni">
-            <div class="stat-numero" id="home-manutenzioni">—</div>
-            <div class="stat-label">Manutenzioni</div>
-          </div>
+          <div class="stat-card occupazione"><div class="stat-numero" id="home-occ">—</div><div class="stat-label">Occupazione</div></div>
+          <div class="stat-card arrivi"><div class="stat-numero" id="home-arrivi">—</div><div class="stat-label">Arrivi oggi</div></div>
+          <div class="stat-card partenze"><div class="stat-numero" id="home-partenze">—</div><div class="stat-label">Partenze oggi</div></div>
+          <div class="stat-card pulizie"><div class="stat-numero" id="home-pulizie">—</div><div class="stat-label">Da pulire</div></div>
+          <div class="stat-card manutenzioni"><div class="stat-numero" id="home-manutenzioni">—</div><div class="stat-label">Manutenzioni</div></div>
         </div>
 
         <div class="home-sezione-titolo">Azioni rapide</div>
-        <div class="home-azioni">
-          <button class="azione-rapida principale" id="home-nuova-pren">
-            <div class="azione-icon">➕</div>
-            <div class="azione-testo">
-              Nuova prenotazione
-              <small>Aggiungi un cliente</small>
-            </div>
-          </button>
-          <button class="azione-rapida" id="home-preventivo">
+        <button class="azione-rapida" onclick="vaiA('preventivo')">
             <div class="azione-icon">📄</div>
-            <div class="azione-testo">
-              Nuovo preventivo
-              <small>Calcolo veloce al telefono</small>
-            </div>
-          </button>
-          <button class="azione-rapida" id="home-vai-camere">
-            <div class="azione-icon">🛏️</div>
-            <div class="azione-testo">
-              Vedi camere
-              <small>Griglia completa e disponibilità</small>
-            </div>
-          </button>
-          <button class="azione-rapida" id="home-vai-pulizie">
-            <div class="azione-icon">🧹</div>
-            <div class="azione-testo">
-              Board pulizie
-              <small>Camere da pulire</small>
-            </div>
-          </button>
-        </div>
+            <div class="azione-testo">Nuovo preventivo<small>Calcolo veloce al telefono</small></div>
+        </button>
+        <button class="azione-rapida" onclick="esportaBackup()">
+            <div class="azione-icon" style="background:#ecfdf5;">💾</div>
+            <div class="azione-testo">Esporta Backup<small>Salva i dati su un file (Consigliato)</small></div>
+        </button>
+        <button class="azione-rapida" onclick="document.getElementById('file-import').click()">
+            <div class="azione-icon" style="background:#fef2f2;">📥</div>
+            <div class="azione-testo">Importa Backup<small>Ripristina i dati da un file</small></div>
+        </button>
+        <input type="file" id="file-import" accept=".json" style="display:none;" onchange="importaBackup(event)">
       </div>
     </div>
 
-    <div id="sez-camere" class="sezione"> 
-      <div class="info-occupazione">
-        <div>Occupazione oggi: <strong id="info-occ">—</strong></div>
-        <button class="btn-aggiorna" id="btn-aggiorna">🔄 Aggiorna</button>
-      </div>
-
-      <div class="legend">
-        <div class="legend-item"><span class="dot dot-libera"></span> Libera</div>
-        <div class="legend-item"><span class="dot dot-occupata"></span> Occupata</div>
-        <div class="legend-item"><span class="dot dot-da_pulire"></span> Da pulire</div>
-        <div class="legend-item"><span class="dot dot-fuori_servizio"></span> Fuori servizio</div>
-        <div class="legend-item">🌊 Fronte mare</div>
-      </div>
-
-          <div class="filtro-date" id="filtro-date">
-        <div class="filtro-date-riga">
-          <span class="filtro-date-label">📅 Disponibilità</span>
-          <input type="date" id="filtro-dal">
-          <span style="color:#888;">→</span>
-          <input type="date" id="filtro-al">
-        </div>
-        <div class="filtro-date-riga">
-          <button class="btn-cerca" id="btn-cerca-date">Cerca</button>
-          <button class="btn-reset" id="btn-reset-date">✖ Reset</button>
-        </div>
-        <div id="riepilogo-disponibilita" class="riepilogo-disp" style="display:none;"></div>
-      </div>
-
-      <div class="filtri-piano" id="filtri-piano">
-        <button data-piano="tutti" class="attivo">Tutti</button>
-        <button data-piano="4">4° Piano</button>
-        <button data-piano="3">3° Piano</button>
-        <button data-piano="2">2° Piano</button>
-        <button data-piano="1">1° Piano</button>
-        <button data-piano="-1">Seminterrato</button>
-        <button data-piano="fronte_mare">🌊 Fronte mare</button>
-      </div>
-      <div id="camere-container"><div class="loading">Caricamento camere...</div></div>
-    </div>
+    <!-- PREVENTIVO -->
     <div id="sez-preventivo" class="sezione">
       <div class="preventivo-wrap">
-
         <div class="prev-form-card">
-          <h2 style="font-size:18px; margin-bottom:4px;">📄 Nuovo preventivo</h2>
-          <p style="font-size:13px; color:#666; margin-bottom:12px;">Compila i campi e il preventivo si genera automaticamente.</p>
-
-          <label>Nome cliente</label>
-          <input type="text" id="prev-nome" placeholder="Es. Mario Rossi">
-
-          <div class="row" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-            <div>
-              <label>Cellulare</label>
-              <input type="tel" id="prev-tel" placeholder="333...">
-            </div>
-            <div>
-              <label>Email</label>
-              <input type="email" id="prev-email" placeholder="nome@email.it">
-            </div>
-          </div>
-
-          <div class="row" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-            <div>
-              <label>Dal *</label>
-              <input type="date" id="prev-dal">
-            </div>
-            <div>
-              <label>Al *</label>
-              <input type="date" id="prev-al">
-            </div>
-          </div>
-
-                   <label>Numero ospiti *</label>
-          <input type="number" id="prev-ospiti" value="2" min="1" max="10">
-
+          <h2>📄 Nuovo preventivo</h2>
+          <label>Nome cliente</label><input type="text" id="prev-nome">
+          <div class="row"><div><label>Cellulare</label><input type="tel" id="prev-tel"></div><div><label>Email</label><input type="email" id="prev-email"></div></div>
+          <div class="row"><div><label>Dal *</label><input type="date" id="prev-dal"></div><div><label>Al *</label><input type="date" id="prev-al"></div></div>
+          <label>Numero ospiti *</label><input type="number" id="prev-ospiti" value="2" min="1">
           <label>Trattamento *</label>
           <select id="prev-trattamento">
             <option value="Bed & Breakfast">Bed & Breakfast</option>
             <option value="Mezza Pensione">Mezza Pensione</option>
             <option value="Pensione Completa">Pensione Completa</option>
-            <option value="All Inclusive">All Inclusive (tutti i pasti + spiaggia 3ª/4ª fila + acqua e vino ai pasti)</option>
+            <option value="All Inclusive">All Inclusive</option>
           </select>
-
-       
-
-                   <label>Prezzo al giorno a persona (€) *</label>
-          <input type="number" id="prev-prezzo" step="0.50" min="0" placeholder="Es. 40">
-
-          <div style="margin-top:16px; padding-top:14px; border-top:1px solid #e5e7eb;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-              <label style="margin:0; font-size:13px; color:#555; font-weight:600;">Ospiti con prezzo diverso (sconti)</label>
-              <button type="button" id="prev-aggiungi-riga" style="padding:6px 12px; background:#2563eb; color:white; border:none; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">+ Aggiungi</button>
-            </div>
-            <small style="font-size:11px; color:#888; display:block; margin-bottom:8px;">Es. bambini, terzo letto, ecc. (prezzo al giorno a persona)</small>
-            <div id="prev-righe-extra"></div>
-          </div>
-          <label>Note (opzionale)</label>
-          <textarea id="prev-note" rows="2" placeholder="Es. Colazione inclusa, parcheggio..."></textarea>
-
-          <div class="prev-riepilogo" id="prev-riepilogo">
-            <div>Compila i campi per vedere il calcolo...</div>
-          </div>
+          <label>Prezzo al giorno a persona (€) *</label><input type="number" id="prev-prezzo" step="0.50" min="0">
+          <label>Note</label><textarea id="prev-note" rows="2"></textarea>
+          <div class="prev-riepilogo" id="prev-riepilogo"><div>Compila i campi per vedere il calcolo...</div></div>
         </div>
-
         <div class="prev-form-card">
-          <h3 style="font-size:15px; margin-bottom:10px;">📋 Preventivo pronto</h3>
-          <textarea class="prev-testo" id="prev-testo" readonly placeholder="Il testo del preventivo apparirà qui..."></textarea>
-
+          <h3>📋 Preventivo pronto</h3>
+          <textarea class="prev-testo" id="prev-testo" readonly></textarea>
           <div class="prev-azioni">
-            <button class="btn-copia" id="prev-btn-copia">📋 Copia testo</button>
-            <button class="btn-whatsapp" id="prev-btn-whatsapp">💬 WhatsApp</button>
-            <button class="btn-email" id="prev-btn-email">📧 Email</button>
-            <button class="btn-stampa" id="prev-btn-stampa">🖨️ Stampa/PDF</button>
-                      </div>
+            <button class="btn-copia" onclick="copiaPreventivo()">📋 Copia</button>
+            <button class="btn-whatsapp" onclick="inviaWhatsApp()">💬 WhatsApp</button>
+            <button class="btn-email" onclick="inviaEmail()">📧 Email</button>
+            <button class="btn-stampa" onclick="stampaPreventivo()">🖨️ Stampa</button>
+          </div>
         </div>
-
       </div>
     </div>
 
-       <div id="sez-prenotazioni" class="sezione">
+    <!-- RICHIESTE -->
+    <div id="sez-richieste" class="sezione">
+      <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+        <h2 style="font-size:18px;">📞 Richieste</h2>
+        <button class="btn-primary" style="width:auto; margin:0; padding:10px 16px;" onclick="apriRichiesta()">+ Nuova</button>
+      </div>
+      <div class="ricerca-box"><input type="text" id="ricerca-richiesta" placeholder="🔍 Cerca per nome, tel o email..." oninput="renderRichieste()"></div>
+      <div id="richieste-container"></div>
+    </div>
+
+    <!-- PRENOTAZIONI -->
+    <div id="sez-prenotazioni" class="sezione">
       <div style="display:flex; gap:8px; margin-bottom:12px;">
-        <button class="btn-primary" id="btn-nuova-pren" style="margin:0; flex:2;">+ Nuova prenotazione</button>
-        <button type="button" id="btn-esporta-pren" style="flex:1; padding:14px; background:#10b981; color:white; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">📥 CSV</button>
+        <button class="btn-primary" style="margin:0; flex:2;" onclick="apriPrenotazione()">+ Nuova prenotazione</button>
       </div>
-      
-      <div class="ricerca-pren" style="background:white; padding:12px 14px; border-radius:10px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,0.06);">
-        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-          <input type="text" id="ricerca-nome" placeholder="🔍 Cerca per nome..." style="flex:2; min-width:150px; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:14px; font-family:inherit;">
-          <input type="date" id="ricerca-data" style="flex:1; min-width:130px; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:14px; font-family:inherit;" title="Data di check-in">
-          <button type="button" id="btn-reset-ricerca" style="padding:10px 14px; background:#f3f4f6; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">✖</button>
-        </div>
-        <div id="ricerca-info" style="font-size:12px; color:#6b7280; margin-top:8px; display:none;"></div>
-      </div>
-
-      <div class="filtri" id="filtri-pren">   
-        <button data-filtro="attive" class="attivo">Attive</button>
-        <button data-filtro="oggi">Arrivi oggi</button>
-        <button data-filtro="partenze">Partenze oggi</button>
-        <button data-filtro="tutte">Tutte</button>
-        <button data-filtro="conclusa">Concluse</button>
-      </div>
-      <div id="pren-container"><div class="loading">Caricamento...</div></div>
+      <div class="ricerca-box"><input type="text" id="ricerca-pren" placeholder="🔍 Cerca per nome..." oninput="renderPrenotazioni()"></div>
+      <div id="pren-container"></div>
     </div>
 
-        <div id="sez-richieste" class="sezione">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
-        <h2 style="font-size:18px; margin:0;">📞 Richieste Clienti</h2>
-        <div style="display:flex; gap:8px;">
-          <button class="btn-primary" id="btn-nuova-richiesta" style="width:auto; margin:0; padding:10px 16px;">+ Nuova</button>
-          <button type="button" id="btn-esporta-richieste" style="padding:10px 14px; background:#10b981; color:white; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">📥 CSV</button>
-        </div>
+    <!-- CAMERE -->
+    <div id="sez-camere" class="sezione">
+      <div class="info-occupazione"><div>Occupazione oggi: <strong id="info-occ">—</strong></div></div>
+      <div class="legend">
+        <div class="legend-item"><span class="dot dot-libera"></span> Libera</div>
+        <div class="legend-item"><span class="dot dot-occupata"></span> Occupata</div>
+        <div class="legend-item"><span class="dot dot-da_pulire"></span> Da pulire</div>
+        <div class="legend-item">🌊 Fronte mare</div>
       </div>
-      <div class="ricerca-pren" style="background:white; padding:12px 14px; border-radius:10px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,0.06);">
-        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-          <input type="text" id="ricerca-richiesta" placeholder="🔍 Cerca per nome, tel o email..." style="flex:1; min-width:200px; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:14px; font-family:inherit;">
-          <button type="button" id="btn-reset-ricerca-richiesta" style="padding:10px 14px; background:#f3f4f6; border:none; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer;">✖</button>
-        </div>
-      </div>
-
-      <div id="richieste-container"><div class="loading">Caricamento...</div></div>
+      <div id="camere-container"></div>
     </div>
+
+    <!-- MANUTENZIONI -->
     <div id="sez-manutenzioni" class="sezione">
       <h2 style="font-size:18px; margin-bottom:12px;">📝 Manutenzioni</h2>
-      <button class="btn-primary" id="btn-nuova-man">+ Nuova manutenzione</button>
-      <div id="man-container"><div class="loading">Caricamento...</div></div>
+      <button class="btn-primary" onclick="apriManutenzione()">+ Nuova manutenzione</button>
+      <div id="man-container"></div>
     </div>
-
   </div>
-    <nav class="bottom-nav">
-    <button data-sezione="home" class="attivo"><span class="icon">🏠</span>Home</button>
-    <button data-sezione="preventivo"><span class="icon">📄</span>Preventivo</button>
-    <button data-sezione="richieste"><span class="icon">📞</span>Richieste</button>
-    <button data-sezione="prenotazioni"><span class="icon">📅</span>Prenota</button>
-    <button data-sezione="camere"><span class="icon">🛏️</span>Camere</button>
-    <button data-sezione="manutenzioni"><span class="icon">📝</span>Manut.</button>
-  </nav> 
-</div>
+
+  <nav class="bottom-nav">
+    <button data-sezione="home" class="attivo" onclick="vaiA('home')"><span class="icon-wrapper">🏠</span>Home</button>
+    <button data-sezione="preventivo" onclick="vaiA('preventivo')"><span class="icon-wrapper">📄</span>Preventivo</button>
+    <button data-sezione="richieste" onclick="vaiA('richieste')"><span class="icon-wrapper">📞</span>Richieste</button>
+    <button data-sezione="prenotazioni" onclick="vaiA('prenotazioni')"><span class="icon-wrapper">📅</span>Prenota</button>
+    <button data-sezione="camere" onclick="vaiA('camere')"><span class="icon-wrapper">🛏️</span>Camere</button>
+    <button data-sezione="manutenzioni" onclick="vaiA('manutenzioni')"><span class="icon-wrapper">📝</span>Manut.</button>
+  </nav>
 </div>
 
-<!-- MODAL STATO CAMERA (solo da_pulire/fuori_servizio) -->
-<div class="modal-overlay" id="modal-overlay">
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-camera">
   <div class="modal">
-    <h2>Camera <span id="modal-numero"></span></h2>
-    <p style="font-size:13px; color:#666; margin-bottom:12px;">
-      Stato attuale: <strong id="modal-stato-attuale">—</strong><br>
-      <span style="font-size:11px;">Lo stato Libera/Occupata è automatico in base alle prenotazioni.</span>
-    </p>
-    <button class="modal-stato-btn" data-stato="da_pulire"><span class="dot dot-da_pulire"></span> Segna come "Da pulire"</button>
-    <button class="modal-stato-btn" data-stato="fuori_servizio"><span class="dot dot-fuori_servizio"></span> Segna come "Fuori servizio"</button>
-       <button class="modal-stato-btn" data-stato="pulita" style="border-color:#10b981;"><span class="dot dot-libera"></span> ✅ Segna come "Pulita"</button>
-    <button class="modal-stato-btn" data-stato="reset"><span class="dot dot-libera"></span> Ripristina stato automatico</button>
-    <button class="chiudi" id="btn-chiudi-modal">Chiudi</button>
+    <h2>Camera <span id="cam-num"></span></h2>
+    <button class="modal-stato-btn" onclick="cambiaStatoCamera('da_pulire')"><span class="dot dot-da_pulire"></span> Da pulire</button>
+    <button class="modal-stato-btn" onclick="cambiaStatoCamera('fuori_servizio')"><span class="dot dot-fuori_servizio"></span> Fuori servizio</button>
+    <button class="modal-stato-btn" data-stato="pulita" onclick="cambiaStatoCamera('libera')"><span class="dot dot-libera"></span> ✅ Pulita / Libera</button>
+    <button class="chiudi" onclick="chiudiModal('modal-camera')">Chiudi</button>
   </div>
 </div>
 
-<!-- MODAL PRENOTAZIONE -->
 <div class="modal-overlay" id="modal-pren">
   <div class="modal">
-    <h2 id="titolo-pren">Nuova prenotazione</h2>
-    <form id="form-pren">
-      <input type="hidden" id="pren-id">
-      <label>Nome ospite *</label>
-      <input type="text" id="pren-nome" required>
-      <label>Telefono</label>
-      <input type="tel" id="pren-telefono">
-      <label>Email</label>
-      <input type="email" id="pren-email" placeholder="nome@email.it">     
-      <div class="row">
-        <div><label>Check-in *</label><input type="date" id="pren-checkin" required></div>
-        <div><label>Check-out *</label><input type="date" id="pren-checkout" required></div>
-      </div>
-      <label>Camera *</label>
-      <select id="pren-camera" required></select>
-      <div class="row">
-        <div><label>N. ospiti</label><input type="number" id="pren-ospiti" value="1" min="1"></div>
-        <div><label>Prezzo totale €</label><input type="number" id="pren-prezzo" step="0.01" min="0"></div>
-      </div>
-      <label>Note</label>
-      <textarea id="pren-note" rows="2"></textarea>
-      <div style="display:flex; gap:8px; margin-top:16px;">
-        <button type="button" class="chiudi" id="btn-annulla-pren" style="flex:1;">Annulla</button>
-        <button type="submit" class="btn-primary" style="flex:2; margin:0;">Salva</button>
-      </div>
-    </form>
+    <h2 id="titolo-pren">Prenotazione</h2>
+    <input type="hidden" id="pren-id">
+    <label>Nome ospite *</label><input type="text" id="pren-nome">
+    <label>Telefono</label><input type="tel" id="pren-telefono">
+    <label>Email</label><input type="email" id="pren-email">
+    <div class="row"><div><label>Check-in *</label><input type="date" id="pren-checkin"></div><div><label>Check-out *</label><input type="date" id="pren-checkout"></div></div>
+    <label>Camera *</label><select id="pren-camera"></select>
+    <div class="row"><div><label>Ospiti</label><input type="number" id="pren-ospiti" value="1"></div><div><label>Prezzo €</label><input type="number" id="pren-prezzo" step="0.01"></div></div>
+    <label>Note</label><textarea id="pren-note" rows="2"></textarea>
+    <div style="display:flex; gap:8px; margin-top:16px;">
+      <button class="chiudi" style="flex:1;" onclick="chiudiModal('modal-pren')">Annulla</button>
+      <button class="btn-primary" style="flex:2; margin:0;" onclick="salvaPrenotazione()">Salva</button>
+    </div>
   </div>
 </div>
 
-<!-- MODAL MANUTENZIONE -->
-<div class="modal-overlay" id="modal-man">
-  <div class="modal">
-    <h2>Nuova manutenzione</h2>
-    <form id="form-man">
-      <label>Camera *</label>
-      <select id="man-camera" required></select>
-      <label>Descrizione *</label>
-      <textarea id="man-descrizione" rows="3" required></textarea>
-      <div style="display:flex; gap:8px; margin-top:16px;">
-        <button type="button" class="chiudi" id="btn-annulla-man" style="flex:1;">Annulla</button>
-        <button type="submit" class="btn-primary" style="flex:2; margin:0;">Salva</button>
-      </div>
-    </form>
-  </div>
-</div>
-<!-- MODAL RICHIESTA -->
 <div class="modal-overlay" id="modal-richiesta">
   <div class="modal">
-    <h2>Nuova Richiesta</h2>
-    <form id="form-richiesta">
-      <input type="hidden" id="richiesta-id">
-      
-      <label>Nome e Cognome *</label>
-      <input type="text" id="richiesta-nome" required>
-      
-      <div class="row">
-        <div><label>Cellulare *</label><input type="tel" id="richiesta-telefono" required></div>
-        <div><label>Email</label><input type="email" id="richiesta-email"></div>
-      </div>
+    <h2>Richiesta</h2>
+    <input type="hidden" id="richiesta-id">
+    <label>Nome *</label><input type="text" id="richiesta-nome">
+    <div class="row"><div><label>Cellulare *</label><input type="tel" id="richiesta-telefono"></div><div><label>Email</label><input type="email" id="richiesta-email"></div></div>
+    <div class="row"><div><label>Dal</label><input type="date" id="richiesta-checkin"></div><div><label>Al</label><input type="date" id="richiesta-checkout"></div></div>
+    <div class="row"><div><label>Adulti</label><input type="number" id="richiesta-adulti" value="2"></div><div><label>Bambini</label><input type="number" id="richiesta-bambini" value="0"></div></div>
+    <label>Età bambini</label><input type="text" id="richiesta-eta">
+    <label>Trattamento</label>
+    <select id="richiesta-trattamento"><option value="">Da decidere</option><option value="Bed & Breakfast">B&B</option><option value="Mezza Pensione">Mezza Pensione</option><option value="Pensione Completa">Pensione Completa</option><option value="All Inclusive">All Inclusive</option></select>
+    <label>Note</label><textarea id="richiesta-note" rows="2"></textarea>
+    <div style="display:flex; gap:8px; margin-top:16px;">
+      <button class="chiudi" style="flex:1;" onclick="chiudiModal('modal-richiesta')">Annulla</button>
+      <button class="btn-primary" style="flex:2; margin:0;" onclick="salvaRichiesta()">Salva</button>
+    </div>
+  </div>
+</div>
 
-      <div class="row">
-        <div><label>Check-in (interessato)</label><input type="date" id="richiesta-checkin"></div>
-        <div><label>Check-out (interessato)</label><input type="date" id="richiesta-checkout"></div>
-      </div>
-
-      <div class="row">
-        <div><label>Adulti</label><input type="number" id="richiesta-adulti" value="2" min="1"></div>
-        <div><label>Bambini</label><input type="number" id="richiesta-bambini" value="0" min="0"></div>
-      </div>
-
-      <label>Età bambini (se presenti)</label>
-      <input type="text" id="richiesta-eta" placeholder="Es. 5 anni, 8 anni">
-
-      <label>Trattamento preferito</label>
-      <select id="richiesta-trattamento">
-        <option value="">Da decidere / Non specificato</option>
-        <option value="Bed & Breakfast">Bed & Breakfast</option>
-        <option value="Mezza Pensione">Mezza Pensione</option>
-        <option value="Pensione Completa">Pensione Completa</option>
-        <option value="All Inclusive">All Inclusive</option>
-      </select>
-
-      <label>Note aggiuntive</label>
-      <textarea id="richiesta-note" rows="2" placeholder="Es. Hanno chiesto info su parcheggio, animali, ecc."></textarea>
-
-      <div style="display:flex; gap:8px; margin-top:16px;">
-        <button type="button" class="chiudi" id="btn-annulla-richiesta" style="flex:1;">Annulla</button>
-        <button type="submit" class="btn-primary" style="flex:2; margin:0;">Salva</button>
-      </div>
-    </form>
+<div class="modal-overlay" id="modal-man">
+  <div class="modal">
+    <h2>Manutenzione</h2>
+    <label>Camera</label><select id="man-camera"></select>
+    <label>Descrizione</label><textarea id="man-descrizione" rows="3"></textarea>
+    <div style="display:flex; gap:8px; margin-top:16px;">
+      <button class="chiudi" style="flex:1;" onclick="chiudiModal('modal-man')">Annulla</button>
+      <button class="btn-primary" style="flex:2; margin:0;" onclick="salvaManutenzione()">Salva</button>
+    </div>
   </div>
 </div>
 
 <script>
 // ============================================
-// CONFIGURAZIONE
+// DATABASE LOCALE (LocalStorage)
 // ============================================
-const SUPABASE_URL = 'https://bksrqemkoblcvlhlhzvs.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_CliLTfH7vthh-in0Xjh1sg_dzsVSBTa';
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-const $ = (id) => document.getElementById(id);
-const loginScreen = $('login-screen');
-const appScreen = $('app-screen');
-
-let camere = [];
-let prenotazioni = [];
-let manutenzioni = [];
-let richieste = [];
-let filtroPren = 'attive';
-let filtroPiano = 'tutti';
-let filtroDate = null; // { dal: 'YYYY-MM-DD', al: 'YYYY-MM-DD' } oppure null
+const DB_KEY = 'hotelcamay_data';
+let db = { camere: [], prenotazioni: [], manutenzioni: [], richieste: [] };
 let cameraCorrente = null;
 
-// ============================================
-// LOGIN
-// ============================================
-$('btn-login').addEventListener('click', async () => {
-  const email = $('email').value.trim();
-  const password = $('password').value;
-  if (!email || !password) { $('login-error').textContent = 'Inserisci email e password'; return; }
-  $('btn-login').disabled = true;
-  $('btn-login').textContent = 'Accesso...';
-  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-  $('btn-login').disabled = false;
-  $('btn-login').textContent = 'Accedi';
-  if (error) { $('login-error').textContent = 'Errore: ' + error.message; return; }
-  mostraApp(data.user);
-});
+function salvaDati() { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
 
-$('btn-logout').addEventListener('click', async () => {
-  await supabaseClient.auth.signOut();
-  appScreen.style.display = 'none';
-  loginScreen.style.display = 'flex';
-  $('password').value = '';
-});
+function caricaDatiLocali() {
+    const salvato = localStorage.getItem(DB_KEY);
+    if (salvato) { db = JSON.parse(salvato); } 
+    else { generaCamereIniziali(); salvaDati(); }
+}
 
-async function mostraApp(user) {
-  loginScreen.style.display = 'none';
-  appScreen.style.display = 'block';
-  $('user-email').textContent = user.email;
-  await caricaTutto();
+function generaCamereIniziali() {
+    const camere = [];
+    const schema = [{o:0,t:"Doppia + castello"},{o:2,t:"Matrimoniale"},{o:4,t:"Doppia/Tripla"},{o:6,t:"Quintupla"},{o:8,t:"Quadrupla"},{o:10,t:"Quadrupla"},{o:12,t:"Singola"},{o:14,t:"Quadrupla"},{o:16,t:"Doppia + 3° letto"},{o:18,t:"Singola"},{o:20,t:"Quadrupla"},{o:22,t:"Doppia + 3° letto"}];
+    [2, 26, 50].forEach((base, i) => {
+        schema.forEach(item => {
+            const n = base + item.o;
+            camere.push({ id: n, numero: n, piano: i+1, tipo: item.t, tipo_esteso: item.t, fronte_mare: n <= (base + 6), stato: 'libera' });
+        });
+    });
+    [74, 76, 78].forEach(n => camere.push({ id: n, numero: n, piano: 4, tipo: "Doppia", tipo_esteso: "Doppia", fronte_mare: false, stato: 'libera' }));
+    camere.push({ id: 80, numero: 80, piano: -1, tipo: "Doppia", tipo_esteso: "Doppia", fronte_mare: false, stato: 'libera' });
+    db.camere = camere;
 }
 
 // ============================================
-// NAVIGAZIONE
+// FUNZIONI GENERALI
 // ============================================
-document.querySelectorAll('nav.bottom-nav button').forEach(btn => {
-  btn.addEventListener('click', () => {
-    vaiA(btn.dataset.sezione);
-  });
-});
+function $(id) { return document.getElementById(id); }
+function chiudiModal(id) { $(id).classList.remove('active'); }
+function formatData(d) { if(!d) return '—'; const [y,m,g]=d.split('-'); return `${g}/${m}/${y}`; }
+function calcolaNotti(d1, d2) { if(!d1||!d2) return 0; return Math.max(0, Math.round((new Date(d2) - new Date(d1)) / 86400000)); }
 
-// Pulsanti della Home
-document.addEventListener('click', (e) => {
-  if (e.target.closest('#home-nuova-pren')) {
-    apriFormPren();
-  }
-  if (e.target.closest('#home-preventivo')) {
-    vaiA('preventivo');
-  }
-  if (e.target.closest('#home-vai-camere')) {
-    vaiA('camere');
-  }
-  if (e.target.closest('#home-vai-pulizie')) {
-    vaiA('pulizie');
-  }
-});
-
-// ============================================
-// CARICAMENTO
-// ============================================
-async function caricaTutto() {
-  await caricaCamere();
-  await caricaPrenotazioni();
-  await caricaManutenzioni();
-  await caricaRichieste(); // <--- AGGIUNTO
-  aggiornaInfoOccupazione();
-  aggiornaHome();
-  aggiornaSalutoData();
-}
-
-async function caricaCamere() {
-  const { data, error } = await supabaseClient.from('camere').select('*').order('numero');
-  if (error) { console.error(error); return; }
-  camere = data;
-  renderCamere();
-}
-
-async function caricaPrenotazioni() {
-  const { data, error } = await supabaseClient.from('prenotazioni').select('*').order('check_in', { ascending: false });
-  if (error) { console.error(error); return; }
-  prenotazioni = data;
-  renderPrenotazioni();
-}
-
-async function caricaManutenzioni() {
-  const { data, error } = await supabaseClient.from('manutenzioni').select('*').order('creato_il', { ascending: false });
-  if (error) { console.error(error); return; }
-  manutenzioni = data;
-  renderManutenzioni();
-}
-
-// ============================================
-// INFO OCCUPAZIONE
-// ============================================
-// Aggiorna la Home Page
-function aggiornaHome() {
-  const oggi = new Date().toISOString().slice(0, 10);
-
-  // Occupazione
-  const totale = camere.length;
-  const occupate = camere.filter(c => c.stato === 'occupata').length;
-  const perc = totale ? Math.round((occupate / totale) * 100) : 0;
-  $('home-occ').textContent = `${occupate}/${totale}`;
-  $('home-occ').title = `${perc}% di occupazione`;
-
-  // Arrivi oggi (prenotazioni con check_in = oggi)
-  const arrivi = prenotazioni.filter(p =>
-    p.check_in === oggi && (p.stato === 'confermata' || p.stato === 'in_corso')
-  ).length;
-  $('home-arrivi').textContent = arrivi;
-
-  // Partenze oggi (prenotazioni con check_out = oggi)
-  const partenze = prenotazioni.filter(p =>
-    p.check_out === oggi && (p.stato === 'in_corso' || p.stato === 'confermata')
-  ).length;
-  $('home-partenze').textContent = partenze;
-
-  // Da pulire
-  const pulizie = camere.filter(c => c.stato === 'da_pulire').length;
-  $('home-pulizie').textContent = pulizie;
-
-  // Manutenzioni aperte
-  const man = manutenzioni.filter(m => m.stato !== 'chiusa').length;
-  $('home-manutenzioni').textContent = man;
-}
-
-// Aggiorna saluto e data
-function aggiornaSalutoData() {
-  const ora = new Date().getHours();
-  let saluto = 'Buongiorno! ☀️';
-  if (ora >= 13 && ora < 18) saluto = 'Buon pomeriggio! 🌤️';
-  else if (ora >= 18 || ora < 5) saluto = 'Buonasera! 🌙';
-  $('home-saluto').textContent = saluto;
-
-  const giorni = ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
-  const mesi = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
-  const d = new Date();
-  const testo = `${giorni[d.getDay()]} ${d.getDate()} ${mesi[d.getMonth()]} ${d.getFullYear()} · ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-  $('home-data').textContent = testo;
-}
-
-// Vai a una sezione (per i pulsanti della Home)
 function vaiA(sezione) {
-  document.querySelectorAll('nav.bottom-nav button').forEach(b => {
-    b.classList.toggle('attivo', b.dataset.sezione === sezione);
-  });
-  document.querySelectorAll('.sezione').forEach(s => s.classList.remove('attiva'));
-  $('sez-' + sezione).classList.add('attiva');
-
-  if (sezione === 'camere') { renderCamere(); aggiornaInfoOccupazione(); }
-  if (sezione === 'prenotazioni') caricaPrenotazioni();
-    if (sezione === 'richieste') renderRichieste();
-  if (sezione === 'manutenzioni') caricaManutenzioni();
-    if (sezione === 'home') { aggiornaHome(); aggiornaSalutoData(); }
-  if (sezione === 'preventivo') aggiornaPreventivo();
-
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-function aggiornaInfoOccupazione() {
-  const totale = camere.length;
-  const occupate = camere.filter(c => c.stato === 'occupata').length;
-  const perc = totale ? Math.round((occupate / totale) * 100) : 0;
-  $('info-occ').textContent = `${occupate}/${totale} (${perc}%)`;
+    document.querySelectorAll('.sezione').forEach(s => s.classList.remove('attiva'));
+    $(`sez-${sezione}`).classList.add('attiva');
+    document.querySelectorAll('nav.bottom-nav button').forEach(b => b.classList.toggle('attivo', b.dataset.sezione === sezione));
+    if (sezione === 'home') aggiornaHome();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // ============================================
-// FILTRI PIANO
+// AVVIO E HOME
 // ============================================
-document.querySelectorAll('#filtri-piano button').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('#filtri-piano button').forEach(b => b.classList.remove('attivo'));
-    btn.classList.add('attivo');
-    filtroPiano = btn.dataset.piano;
+function caricaTutto() {
+    caricaDatiLocali();
+    aggiornaHome();
     renderCamere();
-  });
-});
+    renderPrenotazioni();
+    renderRichieste();
+    renderManutenzioni();
+    aggiornaOrologio();
+}
+
+function aggiornaHome() {
+    const oggi = new Date().toISOString().slice(0,10);
+    const camOcc = db.camere.filter(c => c.stato === 'occupata').length;
+    $('home-occ').textContent = `${camOcc}/${db.camere.length}`;
+    $('home-arrivi').textContent = db.prenotazioni.filter(p => p.check_in === oggi && p.stato !== 'cancellata').length;
+    $('home-partenze').textContent = db.prenotazioni.filter(p => p.check_out === oggi && p.stato !== 'cancellata').length;
+    $('home-pulizie').textContent = db.camere.filter(c => c.stato === 'da_pulire').length;
+    $('home-manutenzioni').textContent = db.manutenzioni.filter(m => m.stato !== 'chiusa').length;
+    $('info-occ').textContent = `${camOcc}/${db.camere.length}`;
+}
+
+function aggiornaOrologio() {
+    const ora = new Date().getHours();
+    $('home-saluto').textContent = (ora < 13 ? 'Buongiorno' : ora < 18 ? 'Buon pomeriggio' : 'Buonasera') + '! ☀️';
+    const giorni = ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
+    const mesi = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
+    const d = new Date();
+    $('home-data').textContent = `${giorni[d.getDay()]} ${d.getDate()} ${mesi[d.getMonth()]} ${d.getFullYear()} · ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+setInterval(aggiornaOrologio, 30000);
 
 // ============================================
-// RENDER CAMERE PER PIANO
+// CAMERE
 // ============================================
-
 function renderCamere() {
-  const container = $('camere-container');
-  container.innerHTML = '';
-
-  let lista = camere;
-  if (filtroPiano === 'fronte_mare') lista = camere.filter(c => c.fronte_mare);
-  else if (filtroPiano !== 'tutti') lista = camere.filter(c => c.piano === parseInt(filtroPiano));
-
-  // Se filtro date attivo, mostra solo camere LIBERE in quel periodo
-  if (filtroDate) {
-    lista = lista.filter(c => cameraLiberaInPeriodo(c.numero, filtroDate.dal, filtroDate.al));
-  }
-
-  if (lista.length === 0) {
-    container.innerHTML = '<div class="vuoto">Nessuna camera trovata</div>';
-    return;
-  }
-
-  // Se filtro fronte mare, mostra in un'unica griglia
-  if (filtroPiano === 'fronte_mare') {
-    container.innerHTML = '<div class="piano-titolo">🌊 Camere fronte mare</div><div class="camere-grid" id="grid-fm"></div>';
-    const grid = $('grid-fm');
-    lista.sort((a, b) => a.numero - b.numero).forEach(cam => grid.appendChild(creaCardCamera(cam)));
-    return;
-  }
-
-  // Altrimenti raggruppa per piano
-  const piani = [1, 2, 3, 4, -1];
-  const nomiPiano = { '-1': 'Seminterrato', '1': '1° Piano', '2': '2° Piano', '3': '3° Piano', '4': '4° Piano' };
-
-  piani.forEach(p => {
-    const camerePiano = lista.filter(c => c.piano === p).sort((a, b) => a.numero - b.numero);
-    if (camerePiano.length === 0) return;
-
-    const titolo = document.createElement('div');
-    titolo.className = 'piano-titolo';
-    titolo.innerHTML = `${nomiPiano[p]} <span style="font-size:12px; color:#888; font-weight:400;">(${camerePiano.length} camere)</span>`;
-    container.appendChild(titolo);
-
-    const grid = document.createElement('div');
-    grid.className = 'camere-grid';
-    camerePiano.forEach(cam => grid.appendChild(creaCardCamera(cam)));
-    container.appendChild(grid);
-  });
+    const container = $('camere-container'); container.innerHTML = '';
+    const piani = [1, 2, 3, 4, -1];
+    const nomiPiano = { '-1': 'Seminterrato', '1': '1° Piano', '2': '2° Piano', '3': '3° Piano', '4': '4° Piano' };
+    
+    piani.forEach(p => {
+        const cams = db.camere.filter(c => c.piano === p).sort((a,b)=>a.numero-b.numero);
+        if(cams.length === 0) return;
+        container.innerHTML += `<div class="piano-titolo">${nomiPiano[p]}</div><div class="camere-grid" id="grid-${p}"></div>`;
+        const grid = $(`grid-${p}`);
+        cams.forEach(c => {
+            const card = document.createElement('div');
+            card.className = `camera-card stato-${c.stato}`;
+            card.innerHTML = `${c.fronte_mare ? '<div class="fm-badge">🌊</div>' : ''}<div class="numero">${c.numero}</div><div class="tipo">${c.tipo_esteso}</div><div class="stato-label">${c.stato.replace('_',' ')}</div>`;
+            card.onclick = () => {
+                cameraCorrente = c;
+                $('cam-num').textContent = c.numero;
+                $('modal-camera').classList.add('active');
+            };
+            grid.appendChild(card);
+        });
+    });
 }
 
-function creaCardCamera(cam) {
-  const oggi = new Date().toISOString().slice(0, 10);
-  let prenAttiva, statoMostrato;
-
-  if (filtroDate) {
-    // Modalità disponibilità: mostra prenotazione nel periodo scelto (se c'è)
-    prenAttiva = prenotazioni.find(p =>
-      p.camera_numero === cam.numero &&
-      p.stato !== 'cancellata' &&
-      p.check_in < filtroDate.al && p.check_out > filtroDate.dal
-    );
-    // Se non c'è prenotazione, è libera nel periodo
-    statoMostrato = prenAttiva ? 'occupata' : 'libera';
-  } else {
-    // Modalità normale: stato di oggi
-    prenAttiva = prenotazioni.find(p =>
-      p.camera_numero === cam.numero &&
-      (p.stato === 'in_corso' || p.stato === 'confermata') &&
-      oggi >= p.check_in && oggi < p.check_out
-    );
-    statoMostrato = cam.stato;
-  }
-
-  const card = document.createElement('div');
-  card.className = 'camera-card stato-' + statoMostrato;
-  card.innerHTML = `
-    ${cam.fronte_mare ? '<div class="fm-badge">🌊</div>' : ''}
-    <div class="numero">${cam.numero}</div>
-       <div class="tipo">${cam.tipo_esteso || cam.tipo || '—'}</div>
-    <div class="stato-label">${labelStato(statoMostrato)}</div>
-    ${prenAttiva ? `<div class="ospite">${prenAttiva.nome_ospite}</div>` : ''}
-  `;
-
-  card.addEventListener('click', () => {
-    if (filtroDate && !prenAttiva) {
-      // Camera libera nel periodo → apri direttamente il form prenotazione precompilato
-      apriFormPrenConDate(cam.numero, filtroDate.dal, filtroDate.al);
-    } else {
-      apriModalStato(cam);
-    }
-  });
-  return card;
+function cambiaStatoCamera(stato) {
+    if(!cameraCorrente) return;
+    const cam = db.camere.find(c => c.numero === cameraCorrente.numero);
+    if(cam) cam.stato = stato;
+    salvaDati(); chiudiModal('modal-camera'); caricaTutto();
 }
 
-// Verifica se una camera è libera in un periodo
-function cameraLiberaInPeriodo(numero, dal, al) {
-  return !prenotazioni.some(p =>
-    p.camera_numero === numero &&
-    p.stato !== 'cancellata' &&
-    p.check_in < al && p.check_out > dal
-  );
-}
-
-function labelStato(s) {
-  return { libera: 'Libera', occupata: 'Occupata', da_pulire: 'Da pulire', fuori_servizio: 'Fuori servizio' }[s] || s;
-}
-
-// ============================================
-// MODAL STATO CAMERA
-// ============================================
-function apriModalStato(cam) {
-  cameraCorrente = cam;
-  $('modal-numero').textContent = cam.numero;
-  $('modal-stato-attuale').textContent = labelStato(cam.stato);
-  document.querySelectorAll('.modal-stato-btn').forEach(btn => {
-    btn.classList.toggle('attivo', btn.dataset.stato === cam.stato);
-  });
-  $('modal-overlay').classList.add('active');
-}
-
-$('btn-chiudi-modal').addEventListener('click', () => {
-  $('modal-overlay').classList.remove('active');
-  cameraCorrente = null;
-});
-
-document.querySelectorAll('.modal-stato-btn').forEach(btn => {
-  btn.addEventListener('click', async () => {
-    if (!cameraCorrente) return;
-    const statoScelto = btn.dataset.stato;
-
-    if (statoScelto === 'reset') {
-      // Richiama la funzione SQL che ricalcola in automatico
-      const { error } = await supabaseClient.rpc('ricalcola_stati_camere');
-      if (error) { alert('Errore: ' + error.message); return; }
-    } else if (statoScelto === 'pulita') {
-      // Segna come libera (pulita)
-      const { error } = await supabaseClient.from('camere')
-        .update({ stato: 'libera' })
-        .eq('numero', cameraCorrente.numero);
-      if (error) { alert('Errore: ' + error.message); return; }
-    } else {
-      const { error } = await supabaseClient.from('camere')
-        .update({ stato: statoScelto })
-        .eq('numero', cameraCorrente.numero);
-      if (error) { alert('Errore: ' + error.message); return; }
-    }
-
-    $('modal-overlay').classList.remove('active');
-    cameraCorrente = null;
-    await caricaCamere();
-    aggiornaInfoOccupazione();
-  });
-}); 
 // ============================================
 // PRENOTAZIONI
 // ============================================
-document.querySelectorAll('#filtri-pren button').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('#filtri-pren button').forEach(b => b.classList.remove('attivo'));
-    btn.classList.add('attivo');
-    filtroPren = btn.dataset.filtro;
-    renderPrenotazioni();
-  });
-});
-// Ricerca prenotazioni (nome e data)
-$('ricerca-nome').addEventListener('input', renderPrenotazioni);
-$('ricerca-data').addEventListener('change', renderPrenotazioni);
-
-$('btn-reset-ricerca').addEventListener('click', () => {
-  $('ricerca-nome').value = '';
-  $('ricerca-data').value = '';
-  renderPrenotazioni();
-});
-
 function renderPrenotazioni() {
-  const container = $('pren-container');
-  const oggi = new Date().toISOString().slice(0, 10);
-  let lista = prenotazioni;
+    const container = $('pren-container'); container.innerHTML = '';
+    const ricerca = ($('ricerca-pren').value || '').toLowerCase();
+    
+    let lista = db.prenotazioni;
+    if(ricerca) lista = lista.filter(p => p.nome_ospite.toLowerCase().includes(ricerca));
 
-  // Filtro per stato
-  if (filtroPren === 'attive') lista = prenotazioni.filter(p => p.stato === 'confermata' || p.stato === 'in_corso');
-  else if (filtroPren === 'conclusa') lista = prenotazioni.filter(p => p.stato === 'conclusa');
-  else if (filtroPren === 'oggi') lista = prenotazioni.filter(p => p.check_in === oggi && p.stato !== 'cancellata');
-  else if (filtroPren === 'partenze') lista = prenotazioni.filter(p => p.check_out === oggi && p.stato !== 'cancellata');
-
-  // Ricerca per nome e/o data
-  const ricercaNome = ($('ricerca-nome')?.value || '').trim().toLowerCase();
-  const ricercaData = $('ricerca-data')?.value || '';
-
-  if (ricercaNome) {
-    lista = lista.filter(p => p.nome_ospite.toLowerCase().includes(ricercaNome));
-  }
-  if (ricercaData) {
-    lista = lista.filter(p => p.check_in === ricercaData);
-  }
-
-  // Mostra info ricerca
-  const info = $('ricerca-info');
-  if (info) {
-    if (ricercaNome || ricercaData) {
-      const parti = [];
-      if (ricercaNome) parti.push(`nome "${ricercaNome}"`);
-      if (ricercaData) parti.push(`check-in ${formatData(ricercaData)}`);
-      info.style.display = 'block';
-      info.innerHTML = `🔍 Trovate <strong>${lista.length}</strong> prenotazioni (${parti.join(' + ')})`;
-    } else {
-      info.style.display = 'none';
-    }
-  }
-
-  if (lista.length === 0) {
-    container.innerHTML = '<div class="vuoto">Nessuna prenotazione trovata</div>';
-    return;
-  }
-
-  container.innerHTML = '';
-  lista.forEach(p =>  {
-    const card = document.createElement('div');
-    card.className = 'pren-card';
-    card.innerHTML = `
-      <div class="intestazione">
-        <div>
-          <div class="nome">${p.nome_ospite}</div>
-          <div class="info">📞 ${p.telefono || '—'}</div>
-          ${p.email ? `<div class="info">📧 ${p.email}</div>` : ''}
-        </div>
-        <div class="camera-badge">Cam ${p.camera_numero}</div>
-      </div>   
-      <div class="info">📅 ${formatData(p.check_in)} → ${formatData(p.check_out)}</div>
-      <div class="info">👥 ${p.num_ospiti} ospiti · 💰 € ${p.prezzo_totale || '—'}</div>
-      <div style="margin-top:8px;"><span class="stato-badge badge-${p.stato}">${labelStatoPren(p.stato)}</span></div>
-      <div class="actions">
-        ${p.stato === 'confermata' ? `<button class="btn-checkin" onclick="checkIn(${p.id})">✅ Check-in</button>` : ''}
-        ${p.stato === 'in_corso' ? `<button class="btn-checkout" onclick="checkOut(${p.id})">🚪 Check-out</button>` : ''}
-        <button class="btn-modifica" onclick="modificaPren(${p.id})">✏️ Modifica</button>
-        <button class="btn-cancella" onclick="cancellaPren(${p.id})">🗑️</button>
-      </div>
-    `;
-    container.appendChild(card);
-  });
-}
-
-function labelStatoPren(s) {
-  return { confermata: 'Confermata', in_corso: 'In corso', conclusa: 'Conclusa', cancellata: 'Cancellata' }[s] || s;
-}
-
-function formatData(d) {
-  if (!d) return '—';
-  const [y, m, g] = d.split('-');
-  return `${g}/${m}/${y}`;
-}
-
-$('btn-nuova-pren').addEventListener('click', () => apriFormPren());
-$('btn-annulla-pren').addEventListener('click', () => $('modal-pren').classList.remove('active'));
-
-function apriFormPren(pren = null) {
-  const select = $('pren-camera');
-  // Raggruppa per piano
-  const piani = [1, 2, 3, 4,-1];
-  const nomiPiano = { '-1': 'Seminterrato', '1': '1° Piano', '2': '2° Piano', '3': '3° Piano', '4': '4° Piano' };
-  let opts = '';
-  piani.forEach(p => {
-    const camPiano = camere.filter(c => c.piano === p).sort((a, b) => a.numero - b.numero);
-    if (camPiano.length === 0) return;
-    opts += `<optgroup label="${nomiPiano[p]}">`;
-    camPiano.forEach(c => {
-            opts += `<option value="${c.numero}">Cam ${c.numero} - ${c.tipo_esteso || c.tipo || '—'}${c.fronte_mare ? ' 🌊' : ''}</option>`;
+    lista.sort((a,b) => new Date(b.check_in) - new Date(a.check_in)).forEach(p => {
+        container.innerHTML += `
+            <div class="pren-card">
+                <div class="intestazione">
+                    <div><div class="nome">${p.nome_ospite}</div><div class="info">📞 ${p.telefono || '—'}</div></div>
+                    <div class="camera-badge">Cam ${p.camera_numero}</div>
+                </div>
+                <div class="info">📅 ${formatData(p.check_in)} → ${formatData(p.check_out)}</div>
+                <div class="actions">
+                    ${p.stato === 'confermata' ? `<button class="btn-checkin" onclick="cambiaStatoPren(${p.id}, 'in_corso')">✅ Check-in</button>` : ''}
+                    ${p.stato === 'in_corso' ? `<button class="btn-checkout" onclick="cambiaStatoPren(${p.id}, 'conclusa')">🚪 Check-out</button>` : ''}
+                    <button class="btn-cancella" onclick="cancellaPren(${p.id})">🗑️</button>
+                </div>
+            </div>
+        `;
     });
-    opts += '</optgroup>';
-  });
-  select.innerHTML = opts;
-
-  if (pren) {
-    $('titolo-pren').textContent = 'Modifica prenotazione';
-    $('pren-id').value = pren.id;
-    $('pren-nome').value = pren.nome_ospite;
-    $('pren-telefono').value = pren.telefono || '';
-    $('pren-email').value = pren.email || '';
-    $('pren-checkin').value = pren.check_in;
-    $('pren-checkout').value = pren.check_out;
-    $('pren-camera').value = pren.camera_numero;
-    $('pren-ospiti').value = pren.num_ospiti;
-    $('pren-prezzo').value = pren.prezzo_totale || '';
-    $('pren-note').value = pren.note || '';
-  } else {  
-    $('titolo-pren').textContent = 'Nuova prenotazione';
-    $('form-pren').reset();
-    $('pren-id').value = '';
-    $('pren-checkin').value = new Date().toISOString().slice(0, 10);
-    const domani = new Date(); domani.setDate(domani.getDate() + 1);
-    $('pren-checkout').value = domani.toISOString().slice(0, 10);
-    $('pren-ospiti').value = 1;
-  }
-  $('modal-pren').classList.add('active');
 }
 
-// Apri form prenotazione con date e camera precompilate
-function apriFormPrenConDate(numeroCamera, dal, al) {
-  apriFormPren();
-  $('pren-camera').value = numeroCamera;
-  $('pren-checkin').value = dal;
-  $('pren-checkout').value = al;
+function apriPrenotazione() {
+    $('pren-id').value = ''; $('pren-nome').value = ''; $('pren-telefono').value = ''; $('pren-email').value = '';
+    $('pren-checkin').value = new Date().toISOString().slice(0,10);
+    const domani = new Date(); domani.setDate(domani.getDate()+1);
+    $('pren-checkout').value = domani.toISOString().slice(0,10);
+    
+    $('pren-camera').innerHTML = db.camere.sort((a,b)=>a.numero-b.numero).map(c => `<option value="${c.numero}">Cam ${c.numero} - ${c.tipo_esteso}</option>`).join('');
+    $('modal-pren').classList.add('active');
 }
 
-// ============================================
-// FILTRO DISPONIBILITÀ PER PERIODO
-// ============================================
-$('btn-cerca-date').addEventListener('click', () => {
-  const dal = $('filtro-dal').value;
-  const al = $('filtro-al').value;
-
-  if (!dal || !al) {
-    alert('Inserisci entrambe le date');
-    return;
-  }
-  if (dal >= al) {
-    alert('La data di fine deve essere successiva a quella di inizio');
-    return;
-  }
-
-  filtroDate = { dal, al };
-
-  // Conta camere libere
-  const libere = camere.filter(c => cameraLiberaInPeriodo(c.numero, dal, al)).length;
-  const tot = camere.length;
-  const perc = Math.round((libere / tot) * 100);
-
-  $('riepilogo-disponibilita').style.display = 'block';
-  $('riepilogo-disponibilita').innerHTML = `
-    📅 <strong>${libere} camere libere</strong> su ${tot} (${perc}%) · dal ${formatData(dal)} al ${formatData(al)}
-  `;
-
-  renderCamere();
-});
-
-$('btn-reset-date').addEventListener('click', () => {
-  filtroDate = null;
-  $('filtro-dal').value = '';
-  $('filtro-al').value = '';
-  $('riepilogo-disponibilita').style.display = 'none';
-  renderCamere();
-});
-$('form-pren').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const id = $('pren-id').value;
-   const dati = {
-    nome_ospite: $('pren-nome').value.trim(),
-    telefono: $('pren-telefono').value.trim() || null,
-    email: $('pren-email').value.trim() || null,
-    check_in: $('pren-checkin').value,
-    check_out: $('pren-checkout').value,
-    camera_numero: parseInt($('pren-camera').value),
-    num_ospiti: parseInt($('pren-ospiti').value) || 1,
-    prezzo_totale: parseFloat($('pren-prezzo').value) || null,
-    note: $('pren-note').value.trim() || null
-  };
-  let error;
-  if (id) {
-    ({ error } = await supabaseClient.from('prenotazioni').update(dati).eq('id', id));
-  } else {
-    dati.stato = 'confermata';
-    ({ error } = await supabaseClient.from('prenotazioni').insert(dati));
-  }
-
-  if (error) { alert('Errore: ' + error.message); return; }
-  $('modal-pren').classList.remove('active');
-  await caricaTutto();
-});
-
-function modificaPren(id) {
-  const p = prenotazioni.find(x => x.id === id);
-  if (p) apriFormPren(p);
+function salvaPrenotazione() {
+    const id = $('pren-id').value;
+    const dati = {
+        nome_ospite: $('pren-nome').value, telefono: $('pren-telefono').value, email: $('pren-email').value,
+        check_in: $('pren-checkin').value, check_out: $('pren-checkout').value,
+        camera_numero: parseInt($('pren-camera').value), num_ospiti: parseInt($('pren-ospiti').value),
+        prezzo_totale: parseFloat($('pren-prezzo').value) || null, note: $('pren-note').value
+    };
+    if(id) {
+        const idx = db.prenotazioni.findIndex(p => p.id == id);
+        db.prenotazioni[idx] = { ...db.prenotazioni[idx], ...dati };
+    } else {
+        dati.id = Date.now(); dati.stato = 'confermata';
+        db.prenotazioni.push(dati);
+    }
+    salvaDati(); chiudiModal('modal-pren'); caricaTutto();
 }
 
-async function cancellaPren(id) {
-  if (!confirm('Cancellare questa prenotazione?')) return;
-  const { error } = await supabaseClient.from('prenotazioni').delete().eq('id', id);
-  if (error) { alert('Errore: ' + error.message); return; }
-  await caricaTutto();
+function cambiaStatoPren(id, stato) {
+    const p = db.prenotazioni.find(x => x.id == id);
+    if(p) {
+        p.stato = stato;
+        if(stato === 'conclusa') {
+            const c = db.camere.find(c => c.numero === p.camera_numero);
+            if(c) c.stato = 'da_pulire';
+        }
+        salvaDati(); caricaTutto();
+    }
+}
+
+function cancellaPren(id) {
+    if(!confirm('Sicuro?')) return;
+    db.prenotazioni = db.prenotazioni.filter(p => p.id != id);
+    salvaDati(); caricaTutto();
 }
 
 // ============================================
-// CHECK-IN / OUT
+// RICHIESTE
 // ============================================
-async function checkIn(id) {
-  const p = prenotazioni.find(x => x.id === id);
-  if (!p) return;
-  await supabaseClient.from('prenotazioni').update({ stato: 'in_corso' }).eq('id', id);
-  await caricaTutto();
+function renderRichieste() {
+    const container = $('richieste-container'); container.innerHTML = '';
+    const ricerca = ($('ricerca-richiesta').value || '').toLowerCase();
+    
+    let lista = db.richieste;
+    if(ricerca) lista = lista.filter(r => r.nome.toLowerCase().includes(ricerca) || (r.telefono && r.telefono.includes(ricerca)));
+
+    lista.sort((a,b)=>b.id - a.id).forEach(r => {
+        container.innerHTML += `
+            <div class="pren-card" style="border-left-color: #8b5cf6;">
+                <div class="intestazione"><div class="nome">${r.nome}</div><div class="camera-badge" style="color:#7e22ce; background:#f3e8ff;">Richiesta</div></div>
+                <div class="info">📞 ${r.telefono} · 📧 ${r.email || '—'}</div>
+                <div class="info">👥 ${r.adulti} Adulti, ${r.bambini} Bambini</div>
+                <div class="actions"><button class="btn-cancella" onclick="cancellaRichiesta(${r.id})">🗑️</button></div>
+            </div>
+        `;
+    });
 }
 
-async function checkOut(id) {
-  const p = prenotazioni.find(x => x.id === id);
-  if (!p) return;
-  await supabaseClient.from('prenotazioni').update({ stato: 'conclusa' }).eq('id', id);
-  // Camera va in "da pulire"
-  await supabaseClient.from('camere').update({ stato: 'da_pulire' }).eq('numero', p.camera_numero);
-  await caricaTutto();
+function apriRichiesta() {
+    $('richiesta-id').value = ''; $('richiesta-nome').value = ''; $('richiesta-telefono').value = ''; $('richiesta-email').value = '';
+    $('modal-richiesta').classList.add('active');
 }
 
-// ============================================
-// PULIZIE
-// ============================================
-function renderPulizie() {
-  const container = $('pulizie-container');
-  const daPulire = camere.filter(c => c.stato === 'da_pulire').sort((a, b) => a.numero - b.numero);
-
-  if (daPulire.length === 0) {
-    container.innerHTML = '<div class="vuoto">🎉 Nessuna camera da pulire!</div>';
-    return;
-  }
-
-  container.innerHTML = '<div class="pulizie-grid"></div>';
-  const grid = container.querySelector('.pulizie-grid');
-
-  daPulire.forEach(cam => {
-    const card = document.createElement('div');
-    card.className = 'pulizia-card';
-    card.innerHTML = `
-      <div class="numero">${cam.numero}</div>
-            <div class="tipo">${cam.tipo_esteso || cam.tipo || '—'}${cam.fronte_mare ? ' 🌊' : ''}</div>
-      <button onclick="segnaPulita(${cam.numero})">✅ Pulita</button>
-    `;
-    grid.appendChild(card);
-  });
+function salvaRichiesta() {
+    const id = $('richiesta-id').value;
+    const dati = {
+        nome: $('richiesta-nome').value, telefono: $('richiesta-telefono').value, email: $('richiesta-email').value,
+        check_in: $('richiesta-checkin').value, check_out: $('richiesta-checkout').value,
+        adulti: parseInt($('richiesta-adulti').value), bambini: parseInt($('richiesta-bambini').value),
+        eta_bambini: $('richiesta-eta').value, trattamento: $('richiesta-trattamento').value, note: $('richiesta-note').value
+    };
+    if(id) {
+        const idx = db.richieste.findIndex(r => r.id == id);
+        db.richieste[idx] = { ...db.richieste[idx], ...dati };
+    } else {
+        dati.id = Date.now(); db.richieste.push(dati);
+    }
+    salvaDati(); chiudiModal('modal-richiesta'); caricaTutto();
 }
 
-async function segnaPulita(numero) {
-  const { error } = await supabaseClient.from('camere').update({ stato: 'libera' }).eq('numero', numero);
-  if (error) { alert('Errore: ' + error.message); return; }
-  await caricaCamere();
-  renderPulizie();
+function cancellaRichiesta(id) {
+    if(!confirm('Sicuro?')) return;
+    db.richieste = db.richieste.filter(r => r.id != id);
+    salvaDati(); caricaTutto();
 }
 
 // ============================================
 // MANUTENZIONI
 // ============================================
-$('btn-nuova-man').addEventListener('click', () => {
-  const select = $('man-camera');
-   select.innerHTML = camere.sort((a, b) => a.numero - b.numero).map(c => `<option value="${c.numero}">Cam ${c.numero} - ${c.tipo_esteso || c.tipo || '—'}</option>`).join('');
-  $('form-man').reset();
-  $('modal-man').classList.add('active');
-});
-
-$('btn-annulla-man').addEventListener('click', () => $('modal-man').classList.remove('active'));
-
-$('form-man').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const { error } = await supabaseClient.from('manutenzioni').insert({
-    camera_numero: parseInt($('man-camera').value),
-    descrizione: $('man-descrizione').value.trim(),
-    stato: 'aperta'
-  });
-  if (error) { alert('Errore: ' + error.message); return; }
-  $('modal-man').classList.remove('active');
-  await caricaManutenzioni();
-});
-
 function renderManutenzioni() {
-  const container = $('man-container');
-  if (manutenzioni.length === 0) {
-    container.innerHTML = '<div class="vuoto">Nessuna manutenzione registrata</div>';
-    return;
-  }
-  container.innerHTML = '';
-  manutenzioni.forEach(m => {
-    const card = document.createElement('div');
-    card.className = 'pren-card';
-    card.style.borderLeftColor = m.stato === 'chiusa' ? '#10b981' : m.stato === 'in_corso' ? '#f59e0b' : '#ef4444';
-    card.innerHTML = `
-      <div class="intestazione">
-        <div class="nome">Cam ${m.camera_numero}</div>
-        <span class="stato-badge badge-${m.stato === 'aperta' ? 'cancellata' : m.stato === 'in_corso' ? 'confermata' : 'in_corso'}">${m.stato}</span>
-      </div>
-      <div class="info">${m.descrizione}</div>
-      <div class="actions">
-        ${m.stato !== 'chiusa' ? `<button class="btn-checkin" onclick="chiudiMan(${m.id})">✅ Chiudi</button>` : ''}
-      </div>
-    `;
-    container.appendChild(card);
-  });
-}
-
-async function chiudiMan(id) {
-  await supabaseClient.from('manutenzioni').update({ stato: 'chiusa' }).eq('id', id);
-  await caricaManutenzioni();
-}
-
-// ============================================
-// BOTTONE AGGIORNA
-// ============================================
-$('btn-aggiorna').addEventListener('click', async () => {
-  await supabaseClient.rpc('ricalcola_stati_camere');
-  await caricaTutto();
-});
-
-// ============================================
-// PREVENTIVO
-// ============================================
-const PREV_TASSA = 1.20;
-const PREV_MAX_NOTTI_TASSA = 7;
-
-function calcolaNotti(dal, al) {
-  if (!dal || !al) return 0;
-  const d1 = new Date(dal);
-  const d2 = new Date(al);
-  return Math.max(0, Math.round((d2 - d1) / 86400000));
-}
-
-function aggiornaPreventivo() {
-  const dal = $('prev-dal').value;
-  const al = $('prev-al').value;
-  const ospiti = parseInt($('prev-ospiti').value) || 0;
-  const prezzo = parseFloat($('prev-prezzo').value) || 0;
-  const nome = $('prev-nome').value.trim();
-  const tel = $('prev-tel').value.trim();
-  const email = $('prev-email').value.trim();
-  const note = $('prev-note').value.trim();
-  const trattamento = $('prev-trattamento').value;
-
-  const notti = calcolaNotti(dal, al);
-
-  // Righe extra (sconti)
-  const righeExtra = [];
-  document.querySelectorAll('#prev-righe-extra .riga-extra').forEach(riga => {
-    const qta = parseInt(riga.querySelector('.riga-qta').value) || 0;
-    const prezzoRiga = parseFloat(riga.querySelector('.riga-prezzo').value) || 0;
-    const descrizione = riga.querySelector('.riga-descrizione').value.trim();
-    if (qta > 0 && prezzoRiga > 0) {
-      righeExtra.push({
-        qta,
-        prezzo: prezzoRiga,
-        descrizione: descrizione || `${qta} ospiti`,
-        totale: qta * prezzoRiga * notti
-      });
-    }
-  });
-
-  // Calcoli
-  const totaleSoggiorno = notti * ospiti * prezzo;
-  const totaleExtra = righeExtra.reduce((sum, r) => sum + r.totale, 0);
-  const totale = totaleSoggiorno + totaleExtra;
-
-  // Riepilogo
-  if (notti === 0 || ospiti === 0 || prezzo === 0) {
-    $('prev-riepilogo').innerHTML = '<div style="color:#999;">Compila i campi per vedere il calcolo...</div>';
-    $('prev-testo').value = '';
-    return;
-  }
-
-  let riepilogoExtra = '';
-  if (righeExtra.length > 0) {
-    riepilogoExtra = '<div style="margin-top:8px; padding-top:8px; border-top:1px solid #bfdbfe;">' +
-      righeExtra.map(r => `➕ ${r.descrizione}: ${r.qta} × € ${r.prezzo.toFixed(2)} × ${notti} notti = <strong>€ ${r.totale.toFixed(2)}</strong>`).join('<br>') +
-      '</div>';
-  }
-
-  $('prev-riepilogo').innerHTML = `
-    🌙 <strong>${notti} notti</strong> × 👥 <strong>${ospiti} ospiti</strong> × 💰 <strong>€ ${prezzo.toFixed(2)}</strong>/persona/notte<br>
-    🍽️ <strong>${trattamento}</strong><br>
-    Soggiorno: <strong>€ ${totaleSoggiorno.toFixed(2)}</strong>
-    ${riepilogoExtra}
-    <div style="margin-top:8px; font-size:12px; color:#666;">⚠️ Tassa di soggiorno NON inclusa (€ 1,20/persona/notte, over 16, max 7 notti)</div>
-    <div class="prev-totale">TOTALE: € ${totale.toFixed(2)}</div>
-  `;
-
-  // Testo da copiare
-  const testo = generaTestoPreventivo({
-    nome, tel, email, note, dal, al, notti, ospiti, prezzo, trattamento,
-    righeExtra, totaleSoggiorno, totaleExtra, totale
-  });
-  $('prev-testo').value = testo;
-}
-function generaTestoPreventivo(d) {
-  const riga = '━'.repeat(38);
-  const dataOggi = new Date().toLocaleDateString('it-IT');
-  const formatIt = (iso) => {
-    if (!iso) return '—';
-    const [y, m, g] = iso.split('-');
-    return `${g}/${m}/${y}`;
-  };
-
-  let t = '';
-  t += `${riga}\n`;
-  t += `        HOTEL CAMAY ★★\n`;
-  t += `           Riccione\n`;
-  t += `   Tel: 0541 641443\n`;
-  t += `   Email: info@albergocamay.it\n`;
-  t += `${riga}\n\n`;
-  t += `PREVENTIVO del ${dataOggi}\n\n`;
-  if (d.nome) t += `Cliente: ${d.nome}\n`;
-  if (d.tel) t += `Cellulare: ${d.tel}\n`;
-  if (d.email) t += `Email: ${d.email}\n`;
-  if (d.nome || d.tel || d.email) t += `\n`;
-  t += `📅 Periodo: ${formatIt(d.dal)} → ${formatIt(d.al)}\n`;
-  t += `⏰ Check-in: dalle 12:00 · Check-out: entro le 10:00\n`;
-  t += `🌙 Notti: ${d.notti}\n`;  
-  t += `👥 Ospiti: ${d.ospiti}\n`;
-  t += `🍽️ Trattamento: ${d.trattamento}\n`;
-  t += `💰 Prezzo: € ${d.prezzo.toFixed(2)} al giorno a persona\n\n`;
-  t += `${riga}\n`;
-  t += `DETTAGLIO\n`;
-  t += `${riga}\n`;
-  t += `Soggiorno:\n`;
-  t += `  ${d.notti} notti × ${d.ospiti} ospiti × € ${d.prezzo.toFixed(2)}\n`;
-  t += `  = € ${d.totaleSoggiorno.toFixed(2)}\n`;
-  if (d.righeExtra && d.righeExtra.length > 0) {
-    t += `\nOspiti con prezzo diverso:\n`;
-    d.righeExtra.forEach(r => {
-      t += `  ${r.descrizione}: ${r.qta} × € ${r.prezzo.toFixed(2)} × ${d.notti} notti\n`;
-      t += `  = € ${r.totale.toFixed(2)}\n`;
+    const container = $('man-container'); container.innerHTML = '';
+    db.manutenzioni.sort((a,b)=>b.id - a.id).forEach(m => {
+        container.innerHTML += `
+            <div class="pren-card" style="border-left-color: ${m.stato==='chiusa'?'#10b981':'#ef4444'};">
+                <div class="intestazione"><div class="nome">Cam ${m.camera_numero}</div></div>
+                <div class="info">${m.descrizione}</div>
+                ${m.stato !== 'chiusa' ? `<div class="actions"><button class="btn-checkin" onclick="chiudiMan(${m.id})">✅ Chiudi</button></div>` : ''}
+            </div>
+        `;
     });
-  }
-  t += `\n${riga}\n`;
-  t += `TOTALE: € ${d.totale.toFixed(2)}\n`;
-  t += `${riga}\n\n`;
-  if (d.note) {
-    t += `Note: ${d.note}\n\n`;
-  }
-   t += `📌 Check-in: dalle 12:00 · Check-out: entro le 10:00.\n`;
-  t += `📌 Aria condizionata: supplemento di € 7,00 al giorno.\n\n`;
-  t += `⚠️ La tassa di soggiorno non è inclusa nel prezzo.\n`;
-  t += `   È di € 1,20 al giorno a persona per chi ha più di 16 anni,\n`;
-  t += `   per un massimo di 7 notti consecutive.\n\n`;
-  t += `Preventivo valido 7 giorni.\n\n`;
-  t += `Per confermare puoi:\n`;
-   t += `  💬 Scrivere su WhatsApp: 0541 641443\n`;
-  t += `  📧 Inviare una email: info@albergocamay.it\n`;
-  t += `${riga}\n`;
-
-  return t;
-}
-// ============================================
-// RIGHE EXTRA (SCONTI)
-// ============================================
-function aggiungiRigaExtra() {
-  const container = $('prev-righe-extra');
-  const riga = document.createElement('div');
-  riga.className = 'riga-extra';
-  riga.style.cssText = 'display:grid; grid-template-columns: 1fr 70px 90px 34px; gap:6px; margin-bottom:6px; align-items:center;';
-  riga.innerHTML = `
-    <input type="text" class="riga-descrizione" placeholder="Es. Bambino 5 anni" style="padding:8px; border:1px solid #ddd; border-radius:6px; font-size:13px; font-family:inherit; width:100%;">
-    <input type="number" class="riga-qta" placeholder="N." min="1" value="1" style="padding:8px; border:1px solid #ddd; border-radius:6px; font-size:13px; font-family:inherit; width:100%;">
-    <input type="number" class="riga-prezzo" placeholder="€/gg" min="0" step="0.50" style="padding:8px; border:1px solid #ddd; border-radius:6px; font-size:13px; font-family:inherit; width:100%;">
-    <button type="button" class="riga-rimuovi" style="padding:8px 0; background:#fee2e2; color:#dc2626; border:none; border-radius:6px; font-size:14px; font-weight:700; cursor:pointer;">✕</button>
-  `;
-  container.appendChild(riga);
-
-  // Eventi
-  riga.querySelectorAll('input').forEach(input => {
-    input.addEventListener('input', aggiornaPreventivo);
-  });
-  riga.querySelector('.riga-rimuovi').addEventListener('click', () => {
-    riga.remove();
-    aggiornaPreventivo();
-  });
 }
 
-$('prev-aggiungi-riga').addEventListener('click', aggiungiRigaExtra);
+function apriManutenzione() {
+    $('man-camera').innerHTML = db.camere.sort((a,b)=>a.numero-b.numero).map(c => `<option value="${c.numero}">Cam ${c.numero}</option>`).join('');
+    $('man-descrizione').value = '';
+    $('modal-man').classList.add('active');
+}
 
-// Collega gli input per aggiornare in tempo reale
-['prev-dal','prev-al','prev-ospiti','prev-prezzo','prev-esenti','prev-nome','prev-tel','prev-email','prev-note','prev-trattamento'].forEach(id => {
-  const el = $(id);
-  if (el) el.addEventListener('input', aggiornaPreventivo);
-  if (el) el.addEventListener('change', aggiornaPreventivo);
-});
+function salvaManutenzione() {
+    db.manutenzioni.push({ id: Date.now(), camera_numero: parseInt($('man-camera').value), descrizione: $('man-descrizione').value, stato: 'aperta' });
+    salvaDati(); chiudiModal('modal-man'); caricaTutto();
+}
 
-
-// Pulsante COPIA
-$('prev-btn-copia').addEventListener('click', async () => {
-  const testo = $('prev-testo').value;
-  if (!testo) { alert('Compila prima il preventivo'); return; }
-  try {
-    await navigator.clipboard.writeText(testo);
-    const btn = $('prev-btn-copia');
-    const orig = btn.textContent;
-    btn.textContent = '✅ Copiato!';
-    setTimeout(() => { btn.textContent = orig; }, 1500);
-  } catch (err) {
-    // Fallback per browser vecchi
-    $('prev-testo').select();
-    document.execCommand('copy');
-    alert('Testo copiato!');
-  }
-});
-
-// Pulsante WHATSAPP
-$('prev-btn-whatsapp').addEventListener('click', () => {
-  const testo = $('prev-testo').value;
-  if (!testo) { alert('Compila prima il preventivo'); return; }
-  const tel = $('prev-tel').value.replace(/\D/g, '');
-  const url = tel
-    ? `https://wa.me/39${tel}?text=${encodeURIComponent(testo)}`
-    : `https://wa.me/?text=${encodeURIComponent(testo)}`;
-  window.open(url, '_blank');
-});
-
-// Pulsante EMAIL
-$('prev-btn-email').addEventListener('click', () => {
-  const testo = $('prev-testo').value;
-  if (!testo) { alert('Compila prima il preventivo'); return; }
-  const email = $('prev-email').value.trim();
-  const nome = $('prev-nome').value.trim() || 'Cliente';
-  const oggetto = `Preventivo Hotel Camay - ${nome}`;
-  window.location.href = `mailto:${email}?subject=${encodeURIComponent(oggetto)}&body=${encodeURIComponent(testo)}`;
-});
-
-// Pulsante STAMPA
-$('prev-btn-stampa').addEventListener('click', () => {
-  const testo = $('prev-testo').value;
-  if (!testo) { alert('Compila prima il preventivo'); return; }
-  const w = window.open('', '_blank');
-  w.document.write(`<pre style="font-family:'Courier New',monospace; font-size:12px; padding:20px; line-height:1.5;">${testo.replace(/</g, '&lt;')}</pre>`);
-  w.document.close();
-  setTimeout(() => w.print(), 300);
-});
-
-
-// Reset del form preventivo quando si entra nella sezione
-function resetPreventivo() {
-  // Non resetta tutto, mantiene i valori per comodità, ma aggiorna i calcoli
-  aggiornaPreventivo();
+function chiudiMan(id) {
+    const m = db.manutenzioni.find(x => x.id == id);
+    if(m) { m.stato = 'chiusa'; salvaDati(); caricaTutto(); }
 }
 
 // ============================================
-// RICHIESTE CLIENTI
+// PREVENTIVO, BACKUP E IMPORTAZIONE
 // ============================================
-async function caricaRichieste() {
-  const { data, error } = await supabaseClient.from('richieste').select('*').order('creato_il', { ascending: false });
-  if (error) { console.error(error); return; }
-  richieste = data;
-  renderRichieste();
-}
-
-function renderRichieste() {
-  const container = $('richieste-container');
-  const ricerca = ($('ricerca-richiesta')?.value || '').trim().toLowerCase();
-  
-  let lista = richieste;
-  
-  // Filtro di ricerca (nome, telefono o email)
-  if (ricerca) {
-    lista = richieste.filter(r => 
-      (r.nome && r.nome.toLowerCase().includes(ricerca)) ||
-      (r.telefono && r.telefono.includes(ricerca)) ||
-      (r.email && r.email.toLowerCase().includes(ricerca))
-    );
-  }
-
-  if (lista.length === 0) {
-    container.innerHTML = '<div class="vuoto">Nessuna richiesta trovata</div>';
-    return;
-  }
-
-  container.innerHTML = '';
-  lista.forEach(r => {
-    const card = document.createElement('div');
-    card.className = 'pren-card';
-    card.style.borderLeftColor = '#8b5cf6'; // Colore viola per differenziarle dalle prenotazioni
+function aggiornaPreventivo() {
+    const notti = calcolaNotti($('prev-dal').value, $('prev-al').value);
+    const ospiti = parseInt($('prev-ospiti').value) || 0;
+    const prezzo = parseFloat($('prev-prezzo').value) || 0;
+    const totale = notti * ospiti * prezzo;
     
-    // Formattiamo le date se presenti
-    const dateStr = (r.check_in && r.check_out) 
-      ? `📅 ${formatData(r.check_in)} → ${formatData(r.check_out)}` 
-      : `📅 Date da definire`;
-
-    const ospitiStr = `👥 ${r.adulti} Adulti${r.bambini > 0 ? `, ${r.bambini} Bambini (${r.eta_bambini || 'età n.d.'})` : ''}`;
-    
-    card.innerHTML = `
-      <div class="intestazione">
-        <div>
-          <div class="nome">${r.nome}</div>
-          <div class="info">📞 ${r.telefono || '—'}</div>
-          ${r.email ? `<div class="info">📧 ${r.email}</div>` : ''}
-        </div>
-        <div class="camera-badge" style="background:#f3e8ff; color:#7e22ce;">Richiesta</div>
-      </div>
-      <div class="info">${dateStr}</div>
-      <div class="info">${ospitiStr}</div>
-      <div class="info">🍽️ ${r.trattamento || 'Trattamento da decidere'}</div>
-      ${r.note ? `<div class="info" style="font-style:italic; margin-top:5px; background:#f9fafb; padding:5px; border-radius:4px;">"${r.note}"</div>` : ''}
-      
-      <div class="actions">
-        <button class="btn-modifica" onclick="modificaRichiesta(${r.id})">✏️ Modifica</button>
-        <button class="btn-cancella" onclick="cancellaRichiesta(${r.id})">🗑️</button>
-        <button class="btn-checkin" onclick="trasformaInPrenotazione(${r.id})">➡️ Prenota</button>
-      </div>
-    `;
-    container.appendChild(card);
-  });
-}
-
-// Ricerca in tempo reale
-$('ricerca-richiesta')?.addEventListener('input', renderRichieste);
-$('btn-reset-ricerca-richiesta')?.addEventListener('click', () => {
-  $('ricerca-richiesta').value = '';
-  renderRichieste();
-});
-
-// Apri Modal Nuova Richiesta
-$('btn-nuova-richiesta')?.addEventListener('click', () => {
-  $('form-richiesta').reset();
-  $('richiesta-id').value = '';
-  $('richiesta-adulti').value = 2;
-  $('richiesta-bambini').value = 0;
-  $('modal-richiesta').classList.add('active');
-});
-
-$('btn-annulla-richiesta')?.addEventListener('click', () => {
-  $('modal-richiesta').classList.remove('active');
-});
-
-// Salva Richiesta
-$('form-richiesta')?.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const id = $('richiesta-id').value;
-  
-  const dati = {
-    nome: $('richiesta-nome').value.trim(),
-    telefono: $('richiesta-telefono').value.trim(),
-    email: $('richiesta-email').value.trim() || null,
-    check_in: $('richiesta-checkin').value || null,
-    check_out: $('richiesta-checkout').value || null,
-    adulti: parseInt($('richiesta-adulti').value) || 1,
-    bambini: parseInt($('richiesta-bambini').value) || 0,
-    eta_bambini: $('richiesta-eta').value.trim() || null,
-    trattamento: $('richiesta-trattamento').value || null,
-    note: $('richiesta-note').value.trim() || null
-  };
-
-  let error;
-  if (id) {
-    ({ error } = await supabaseClient.from('richieste').update(dati).eq('id', id));
-  } else {
-    ({ error } = await supabaseClient.from('richieste').insert(dati));
-  }
-
-  if (error) { alert('Errore: ' + error.message); return; }
-  $('modal-richiesta').classList.remove('active');
-  await caricaRichieste();
-});
-
-// Modifica Richiesta
-function modificaRichiesta(id) {
-  const r = richieste.find(x => x.id === id);
-  if (!r) return;
-  
-  $('richiesta-id').value = r.id;
-  $('richiesta-nome').value = r.nome;
-  $('richiesta-telefono').value = r.telefono || '';
-  $('richiesta-email').value = r.email || '';
-  $('richiesta-checkin').value = r.check_in || '';
-  $('richiesta-checkout').value = r.check_out || '';
-  $('richiesta-adulti').value = r.adulti;
-  $('richiesta-bambini').value = r.bambini;
-  $('richiesta-eta').value = r.eta_bambini || '';
-  $('richiesta-trattamento').value = r.trattamento || '';
-  $('richiesta-note').value = r.note || '';
-  
-  $('modal-richiesta').classList.add('active');
-}
-
-// Cancella Richiesta
-async function cancellaRichiesta(id) {
-  if (!confirm('Cancellare questa richiesta?')) return;
-  const { error } = await supabaseClient.from('richieste').delete().eq('id', id);
-  if (error) { alert('Errore: ' + error.message); return; }
-  await caricaRichieste();
-}
-
-// Trasforma Richiesta in Prenotazione (Passa i dati al form prenota)
-function trasformaInPrenotazione(id) {
-  const r = richieste.find(x => x.id === id);
-  if (!r) return;
-
-  apriFormPren(); // Apre il modal vuoto
-  
-  // Compila i campi
-  $('pren-nome').value = r.nome;
-  $('pren-telefono').value = r.telefono || '';
-  $('pren-email').value = r.email || '';
-  if (r.check_in) $('pren-checkin').value = r.check_in;
-  if (r.check_out) $('pren-checkout').value = r.check_out;
-  $('pren-ospiti').value = r.adulti + r.bambini;
-  
-  // Compila le note con i dettagli della richiesta
-  let note = [];
-  if (r.trattamento) note.push(`Trattamento: ${r.trattamento}`);
-  if (r.bambini > 0) note.push(`${r.bambini} Bambini (${r.eta_bambini || 'età n.d.'})`);
-  if (r.note) note.push(r.note);
-  $('pren-note').value = note.join(' | ');
-}
-
-// ============================================
-// ESPORTAZIONE CSV
-// ============================================
-function scaricaCSV(nomeFile, righe) {
-  // Aggiungi BOM per far leggere gli accenti correttamente a Excel
-  const BOM = '\uFEFF';
-  const contenuto = BOM + righe.map(r => r.map(campo => {
-    if (campo === null || campo === undefined) return '';
-    const str = String(campo);
-    // Se contiene virgole, virgolette o a capo, metti tra virgolette
-    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-      return '"' + str.replace(/"/g, '""') + '"';
+    if(notti > 0 && prezzo > 0) {
+        $('prev-riepilogo').innerHTML = `Soggiorno: <strong>€ ${totale.toFixed(2)}</strong><div class="prev-totale">TOTALE: € ${totale.toFixed(2)}</div>`;
+        $('prev-testo').value = `HOTEL CAMAY ★★\nRiccione\nTel: 0541 641443\n\nPREVENTIVO\nCliente: ${$('prev-nome').value}\nPeriodo: ${formatData($('prev-dal').value)} -> ${formatData($('prev-al').value)}\nTrattamento: ${$('prev-trattamento').value}\n\nTOTALE: € ${totale.toFixed(2)}\n\n(La tassa di soggiorno non è inclusa)`;
     }
-    return str;
-  }).join(',')).join('\n');
+}
+document.querySelectorAll('#prev-dal, #prev-al, #prev-ospiti, #prev-prezzo, #prev-nome, #prev-trattamento').forEach(el => el.addEventListener('input', aggiornaPreventivo));
 
-  const blob = new Blob([contenuto], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = nomeFile;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(link.href);
+function copiaPreventivo() { navigator.clipboard.writeText($('prev-testo').value); alert('Copiato!'); }
+function inviaWhatsApp() { window.open(`https://wa.me/39${$('prev-tel').value.replace(/\\D/g, '')}?text=${encodeURIComponent($('prev-testo').value)}`, '_blank'); }
+function inviaEmail() { window.location.href = `mailto:${$('prev-email').value}?subject=Preventivo&body=${encodeURIComponent($('prev-testo').value)}`; }
+function stampaPreventivo() { const w = window.open('', '_blank'); w.document.write(`<pre>${$('prev-testo').value}</pre>`); w.print(); }
+
+// SALVATAGGIO SU FILE (BACKUP)
+function esportaBackup() {
+    const blob = new Blob([JSON.stringify(db, null, 2)], { type: "application/json" });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `backup_hotelcamay_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
 }
 
-// Esporta Prenotazioni (rispetta filtri e ricerca attivi)
-$('btn-esporta-pren')?.addEventListener('click', () => {
-  const oggi = new Date().toISOString().slice(0, 10);
-  let lista = prenotazioni;
+// CARICAMENTO DA FILE (IMPORT)
+function importaBackup(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (data.camere && data.prenotazioni) {
+                if(confirm("Vuoi davvero sovrascrivere i dati attuali con questo backup?")) {
+                    db = data;
+                    salvaDati();
+                    caricaTutto();
+                    alert("Backup ripristinato con successo!");
+                }
+            } else {
+                alert("File non valido.");
+            }
+        } catch (err) {
+            alert("Errore durante la lettura del file.");
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = ''; // Resetta l'input
+}
 
-  // Applica lo stesso filtro della vista
-  if (filtroPren === 'attive') lista = prenotazioni.filter(p => p.stato === 'confermata' || p.stato === 'in_corso');
-  else if (filtroPren === 'conclusa') lista = prenotazioni.filter(p => p.stato === 'conclusa');
-  else if (filtroPren === 'oggi') lista = prenotazioni.filter(p => p.check_in === oggi && p.stato !== 'cancellata');
-  else if (filtroPren === 'partenze') lista = prenotazioni.filter(p => p.check_out === oggi && p.stato !== 'cancellata');
-
-  // Applica ricerca nome/data
-  const ricercaNome = ($('ricerca-nome')?.value || '').trim().toLowerCase();
-  const ricercaData = $('ricerca-data')?.value || '';
-  if (ricercaNome) lista = lista.filter(p => p.nome_ospite.toLowerCase().includes(ricercaNome));
-  if (ricercaData) lista = lista.filter(p => p.check_in === ricercaData);
-
-  if (lista.length === 0) {
-    alert('Nessuna prenotazione da esportare con i filtri attuali');
-    return;
-  }
-
-  // Intestazioni
-  const righe = [[
-    'ID',
-    'Nome Ospite',
-    'Telefono',
-    'Email',
-    'Camera',
-    'Check-in',
-    'Check-out',
-    'Notti',
-    'Num. Ospiti',
-    'Prezzo Totale (€)',
-    'Stato',
-    'Note',
-    'Data Inserimento'
-  ]];
-
-  // Dati
-  lista.forEach(p => {
-    const notti = calcolaNotti(p.check_in, p.check_out);
-    righe.push([
-      p.id,
-      p.nome_ospite,
-      p.telefono || '',
-      p.email || '',
-      p.camera_numero,
-      p.check_in,
-      p.check_out,
-      notti,
-      p.num_ospiti,
-      p.prezzo_totale || '',
-      labelStatoPren(p.stato),
-      p.note || '',
-      p.creato_il ? new Date(p.creato_il).toLocaleString('it-IT') : ''
-    ]);
-  });
-
-  const dataFile = new Date().toISOString().slice(0, 10);
-  scaricaCSV(`prenotazioni_${dataFile}.csv`, righe);
-});
-
-// Esporta Richieste (rispetta ricerca attiva)
-$('btn-esporta-richieste')?.addEventListener('click', () => {
-  const ricerca = ($('ricerca-richiesta')?.value || '').trim().toLowerCase();
-  
-  let lista = richieste;
-  if (ricerca) {
-    lista = richieste.filter(r => 
-      (r.nome && r.nome.toLowerCase().includes(ricerca)) ||
-      (r.telefono && r.telefono.includes(ricerca)) ||
-      (r.email && r.email.toLowerCase().includes(ricerca))
-    );
-  }
-
-  if (lista.length === 0) {
-    alert('Nessuna richiesta da esportare');
-    return;
-  }
-
-  const righe = [[
-    'ID',
-    'Nome',
-    'Telefono',
-    'Email',
-    'Check-in',
-    'Check-out',
-    'Adulti',
-    'Bambini',
-    'Età Bambini',
-    'Trattamento',
-    'Note',
-    'Data Richiesta'
-  ]];
-
-  lista.forEach(r => {
-    righe.push([
-      r.id,
-      r.nome,
-      r.telefono || '',
-      r.email || '',
-      r.check_in || '',
-      r.check_out || '',
-      r.adulti,
-      r.bambini,
-      r.eta_bambini || '',
-      r.trattamento || '',
-      r.note || '',
-      r.creato_il ? new Date(r.creato_il).toLocaleString('it-IT') : ''
-    ]);
-  });
-
-  const dataFile = new Date().toISOString().slice(0, 10);
-  scaricaCSV(`richieste_${dataFile}.csv`, righe);
-});
-// ============================================
 // AVVIO
-// ============================================
-// Aggiorna orologio ogni 30 secondi
-setInterval(() => {
-  if (appScreen.style.display !== 'none') {
-    aggiornaSalutoData();
-  }
-}, 30000);
-(async () => {
-  const { data: { session } } = await supabaseClient.auth.getSession();
-  if (session) mostraApp(session.user);
-  else loginScreen.style.display = 'flex';
-})();
+caricaTutto();
 </script>
 </body>
 </html>
