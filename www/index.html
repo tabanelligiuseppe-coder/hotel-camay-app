@@ -26,11 +26,25 @@
   
   .piano-titolo { font-size: 16px; font-weight: 700; margin: 20px 0 8px 0; color: #1f2937; }
   
+  /* CONTROLLI NAVIGAZIONE SETTIMANA */
+  .nav-settimana {
+    display: flex; justify-content: space-between; align-items: center;
+    background: white; padding: 10px 14px; border-radius: 10px;
+    margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .nav-settimana button {
+    background: #f3f4f6; border: none; padding: 8px 16px;
+    border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;
+  }
+  .nav-settimana button:active { background: #e5e7eb; }
+  .nav-settimana .data-corrente { font-size: 14px; font-weight: 700; color: #2563eb; text-align: center; }
+
   /* GRIGLIA CALENDARIO PIANI */
   .calendario-piani-wrap { overflow-x: auto; background: white; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); padding: 10px; margin-bottom: 15px; }
   .calendario-grid { display: grid; grid-template-columns: 90px repeat(7, minmax(110px, 1fr)); gap: 2px; background: #e5e7eb; border: 1px solid #e5e7eb; min-width: 800px; }
   .calendario-header { background: #f9fafb; padding: 8px 4px; font-weight: 700; text-align: center; font-size: 11px; color: #374151; }
   
+  /* CELLA NOME CAMERA */
   .calendario-camera { background: white; padding: 6px 4px; font-weight: 700; text-align: center; cursor: pointer; display: flex; flex-direction: column; justify-content: center; align-items: center; }
   .calendario-camera:active { background: #f3f4f6; }
   .calendario-camera .cam-num { font-size: 15px; line-height: 1.1; }
@@ -42,7 +56,7 @@
   .calendario-cella.vuota:active { background: #dcfce7; }
   .calendario-evento { background: #fee2e2; color: #991b1b; padding: 4px; border-radius: 4px; font-size: 10px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-left: 3px solid #ef4444; height: 100%; display: flex; align-items: center; }
 
-  /* LISTA CAMERE LIBERE (NUOVA VISTA) */
+  /* LISTA CAMERE LIBERE (VISTA RICERCA) */
   .camere-libere-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
   .camera-libera-card {
     background: white; border-radius: 10px; padding: 15px; text-align: center;
@@ -122,9 +136,9 @@
     margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
     display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
   }
-  .filtro-date-cal input[type="date"] {
+  .filtro-date-cal input[type="date"], .filtro-date-cal select {
     padding: 8px 10px; border: 1px solid #ddd; border-radius: 8px;
-    font-size: 14px; flex: 1; min-width: 130px; font-family: inherit;
+    font-size: 14px; flex: 1; min-width: 100px; font-family: inherit;
   }
   .filtro-date-cal button {
     padding: 8px 14px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
@@ -188,14 +202,17 @@
     <div id="sez-pianocamere" class="sezione">
       <div class="info-occupazione"><div>Occupazione oggi: <strong id="info-occ">—</strong></div></div>
       
-      <!-- BARRA DI RICERCA DATE -->
+      <!-- BARRA DI RICERCA DATE E GIORNI -->
       <div class="filtro-date-cal">
-        <span style="font-size:13px; font-weight:600; color:#374151; margin-right:4px;">📅 Cerca disponibilità:</span>
-        <input type="date" id="cal-dal">
-        <span style="color:#888;">→</span>
-        <input type="date" id="cal-al">
-        <button class="btn-cerca" id="cal-btn-cerca">Cerca</button>
-        <button class="btn-reset" id="cal-btn-reset">✖ Reset</button>
+        <span style="font-size:13px; font-weight:600; color:#374151; margin-right:4px;">📅 Vai a:</span>
+        <input type="date" id="cal-data-inizio">
+        <select id="cal-giorni">
+            <option value="7">7 Giorni</option>
+            <option value="14">14 Giorni</option>
+            <option value="21">21 Giorni</option>
+        </select>
+        <button class="btn-cerca" id="cal-btn-vai">Vai</button>
+        <button class="btn-reset" id="cal-btn-oggi">Oggi</button>
       </div>
 
       <!-- CONTENITORE VISUALIZZAZIONE -->
@@ -379,7 +396,8 @@
 const DB_KEY = 'hotelcamay_data';
 let db = { camere: [], prenotazioni: [], manutenzioni: [], richieste: [] };
 let numeroCameraSelezionata = null;
-let filtroDateCalendario = null; // { dal, al } oppure null
+let dataInizioCalendario = new Date(); // Data di partenza per il calendario
+let giorniDaMostrare = 7; // Giorni visibili nel calendario
 
 function salvaDati() { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
 
@@ -468,94 +486,32 @@ setInterval(aggiornaOrologio, 30000);
 // ============================================
 // CALENDARIO PIANI E RICERCA DATE
 // ============================================
-$('cal-btn-cerca').addEventListener('click', () => {
-    const dal = $('cal-dal').value;
-    const al = $('cal-al').value;
-    if (!dal || !al) { alert('Inserisci entrambe le date'); return; }
-    if (dal >= al) { alert('La data di fine deve essere successiva a quella di inizio'); return; }
+$('cal-btn-vai').addEventListener('click', () => {
+    const dataScelta = $('cal-data-inizio').value;
+    if (!dataScelta) { alert('Seleziona una data di inizio'); return; }
     
-    filtroDateCalendario = { dal, al };
-    
-    // Calcola quante e quali camere sono libere
-    const camereLibere = db.camere.filter(c => {
-        // La camera è libera se NON ha nessuna prenotazione che si sovrappone al periodo
-        return !db.prenotazioni.some(p => 
-            p.camera_numero === c.numero && 
-            p.stato !== 'cancellata' && 
-            p.check_in < al && p.check_out > dal // Logica di sovrapposizione
-        );
-    });
-    
-    if (camereLibere.length === 0) {
-        $('calendario-piani-container').innerHTML = `<div style="text-align:center; padding:40px; background:white; border-radius:10px;"><h3 style="color:#dc2626;">Nessuna camera disponibile</h3><p style="color:#666; margin-top:10px;">Tutte le camere sono occupate dal ${formatData(dal)} al ${formatData(al)}</p></div>`;
-        return;
-    }
-    
-    // Genera la lista visiva delle camere libere
-    renderCamereLibere(camereLibere, dal, al);
-});
-
-$('cal-btn-reset').addEventListener('click', () => {
-    filtroDateCalendario = null;
-    $('cal-dal').value = '';
-    $('cal-al').value = '';
+    dataInizioCalendario = new Date(dataScelta);
+    giorniDaMostrare = parseInt($('cal-giorni').value);
     renderCalendarioPiani();
 });
 
-function renderCamereLibere(camereLibere, dal, al) {
-    const container = $('calendario-piani-container');
-    container.innerHTML = '';
-    
-    container.innerHTML += `
-        <div class="riepilogo-disp" style="display:block; margin-bottom:15px;">
-            📅 <strong>${camereLibere.length} camere libere</strong> dal ${formatData(dal)} al ${formatData(al)}. Clicca su una camera per prenotarla.
-        </div>
-    `;
-
-    const piani = [1, 2, 3, 4, -1];
-    const nomiPiano = { '-1': 'Seminterrato', '1': '1° Piano', '2': '2° Piano', '3': '3° Piano', '4': '4° Piano' };
-
-    piani.forEach(p => {
-        const camsPiano = camereLibere.filter(c => c.piano === p).sort((a,b)=>a.numero-b.numero);
-        if(camsPiano.length === 0) return;
-
-        container.innerHTML += `<div class="piano-titolo">${nomiPiano[p]}</div>`;
-        container.innerHTML += `<div class="camere-libere-grid" id="grid-libere-${p}"></div>`;
-        const grid = $(`grid-libere-${p}`);
-
-        camsPiano.forEach(cam => {
-            const card = document.createElement('div');
-            card.className = 'camera-libera-card';
-            card.innerHTML = `
-                ${cam.fronte_mare ? '<span style="float:right; font-size:16px;">🌊</span>' : ''}
-                <div class="numero">${cam.numero}</div>
-                <div class="tipo">${cam.tipo_esteso}</div>
-                <div class="stato">LIBERA</div>
-            `;
-            // Se clicchi, ti apre direttamente il form prenotazione con quella camera e quelle date precompilate
-            card.onclick = () => {
-                apriNuovaPrenotazione();
-                $('pren-camera').value = cam.numero;
-                $('pren-checkin').value = dal;
-                $('pren-checkout').value = al;
-            };
-            grid.appendChild(card);
-        });
-    });
-}
+$('cal-btn-oggi').addEventListener('click', () => {
+    dataInizioCalendario = new Date();
+    giorniDaMostrare = 7; // default
+    $('cal-data-inizio').value = '';
+    $('cal-giorni').value = '7';
+    renderCalendarioPiani();
+});
 
 function renderCalendarioPiani() {
     const container = $('calendario-piani-container'); 
     container.innerHTML = '';
     
-    // Se c'è un filtro date attivo, non mostriamo il calendario a griglia
-    if (filtroDateCalendario) return;
-
     let giorni = [];
-    for (let i = 0; i < 7; i++) {
-        let d = new Date();
-        d.setDate(d.getDate() + i);
-        giorni.push(d);
+    let tempData = new Date(dataInizioCalendario);
+    for (let i = 0; i < giorniDaMostrare; i++) {
+        giorni.push(new Date(tempData));
+        tempData.setDate(tempData.getDate() + 1);
     }
 
     const piani = [1, 2, 3, 4, -1];
@@ -574,7 +530,9 @@ function renderCalendarioPiani() {
         wrap.className = 'calendario-piani-wrap';
         const grid = document.createElement('div');
         grid.className = 'calendario-grid';
-        grid.style.gridTemplateColumns = `90px repeat(7, minmax(110px, 1fr))`;
+        
+        // Impostiamo il numero di colonne in base ai giorni scelti (90px per il nome + 110px per ogni giorno)
+        grid.style.gridTemplateColumns = `90px repeat(${giorni.length}, minmax(110px, 1fr))`;
         
         grid.innerHTML += `<div class="calendario-header" style="background:white; border:none;"></div>`;
         giorni.forEach(g => {
