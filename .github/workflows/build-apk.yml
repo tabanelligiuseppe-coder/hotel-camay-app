@@ -21,6 +21,13 @@ jobs:
         run: |
           npm init -y
           npm install @capacitor/core @capacitor/cli @capacitor/android
+          npm install @capacitor/assets
+
+      - name: Generate App Icons
+        run: |
+          mkdir -p assets
+          cp www/logo.png assets/icon.png
+          npx capacitor-assets generate --android
 
       - name: Build web app and add Capacitor
         run: |
