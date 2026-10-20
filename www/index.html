@@ -326,7 +326,7 @@
 // ============================================
 const DB_KEY = 'hotelcamay_data';
 let db = { camere: [], prenotazioni: [], manutenzioni: [], richieste: [] };
-let cameraCorrente = null;
+let numeroCameraSelezionata = null; // Variabile globale per il popup
 
 function salvaDati() { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
 
@@ -405,7 +405,7 @@ function aggiornaOrologio() {
 setInterval(aggiornaOrologio, 30000);
 
 // ============================================
-// CAMERE
+// CAMERE (LOGICA BLINDATA)
 // ============================================
 function renderCamere() {
     const container = $('camere-container'); container.innerHTML = '';
@@ -417,12 +417,15 @@ function renderCamere() {
         if(cams.length === 0) return;
         container.innerHTML += `<div class="piano-titolo">${nomiPiano[p]}</div><div class="camere-grid" id="grid-${p}"></div>`;
         const grid = $(`grid-${p}`);
+        
         cams.forEach(c => {
             const card = document.createElement('div');
             card.className = `camera-card stato-${c.stato}`;
             card.innerHTML = `${c.fronte_mare ? '<div class="fm-badge">🌊</div>' : ''}<div class="numero">${c.numero}</div><div class="tipo">${c.tipo_esteso}</div><div class="stato-label">${c.stato.replace('_',' ')}</div>`;
-            card.onclick = () => {
-                cameraCorrente = c;
+            
+            // CLICK DIRETTO E SICURO
+            card.onclick = function() {
+                numeroCameraSelezionata = c.numero;
                 $('cam-num').textContent = c.numero;
                 $('modal-camera').classList.add('active');
             };
@@ -432,10 +435,13 @@ function renderCamere() {
 }
 
 function cambiaStatoCamera(stato) {
-    if(!cameraCorrente) return;
-    const cam = db.camere.find(c => c.numero === cameraCorrente.numero);
+    if(!numeroCameraSelezionata) return;
+    const cam = db.camere.find(c => c.numero === numeroCameraSelezionata);
     if(cam) cam.stato = stato;
-    salvaDati(); chiudiModal('modal-camera'); caricaTutto();
+    
+    salvaDati(); 
+    chiudiModal('modal-camera'); 
+    caricaTutto();
 }
 
 // ============================================
