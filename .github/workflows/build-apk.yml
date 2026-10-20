@@ -30,7 +30,7 @@ jobs:
           npx cap add android
           npx cap sync
 
-        - name: Generate App Icons
+      - name: Generate App Icons
         run: |
           mkdir -p assets
           cp www/logo.png assets/icon.png
