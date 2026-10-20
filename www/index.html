@@ -61,7 +61,6 @@
   .modal label { display: block; font-size: 13px; color: #555; margin-bottom: 4px; font-weight: 500; }
   .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-  /* STILI PER I BAMBINI EXTRA */
   .bambino-riga { display: grid; grid-template-columns: 1fr 80px 30px; gap: 8px; margin-bottom: 8px; align-items: center; }
   .btn-rimuovi-bimbo { background: #fee2e2; color: #dc2626; border: none; border-radius: 6px; height: 38px; cursor: pointer; font-weight: bold; font-size: 16px; }
 
@@ -156,13 +155,11 @@
             <option value="All Inclusive">All Inclusive</option>
           </select>
 
-          <!-- ADULTI -->
           <div class="row" style="margin-top:12px;">
             <div><label>N. Adulti</label><input type="number" id="prev-adulti" value="2" min="1"></div>
             <div><label>Prezzo a Adulto (€/gg)</label><input type="number" id="prev-prezzo-adulto" step="0.50" min="0"></div>
           </div>
 
-          <!-- BAMBINI -->
           <div style="margin-top:16px; border-top:1px dashed #ddd; padding-top:12px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
               <label style="margin:0; font-size:14px; font-weight:700;">Bambini (opzionale)</label>
@@ -444,13 +441,13 @@ function cambiaStatoCamera(stato) {
 // ============================================
 // GESTIONE BAMBINI (FUNZIONE CONDIVISA)
 // ============================================
-function aggiungiBambino(containerId) {
+function aggiungiBambino(containerId, eta = '', prezzo = '') {
     const container = $(containerId);
     const div = document.createElement('div');
     div.className = 'bambino-riga';
     div.innerHTML = `
-        <input type="text" placeholder="Età (es. 5 anni)" class="bimbo-eta" style="margin:0;">
-        <input type="number" placeholder="€/gg" class="bimbo-prezzo" step="0.50" min="0" style="margin:0;">
+        <input type="text" placeholder="Età (es. 5 anni)" class="bimbo-eta" value="${eta}" style="margin:0;">
+        <input type="number" placeholder="€/gg" class="bimbo-prezzo" value="${prezzo}" step="0.50" min="0" style="margin:0;">
         <button type="button" class="btn-rimuovi-bimbo" onclick="this.parentElement.remove(); aggiornaPreventivo();">✕</button>
     `;
     container.appendChild(div);
@@ -492,6 +489,7 @@ function renderPrenotazioni() {
                 <div class="actions">
                     ${p.stato === 'confermata' ? `<button class="btn-checkin" onclick="cambiaStatoPren(${p.id}, 'in_corso')">✅ Check-in</button>` : ''}
                     ${p.stato === 'in_corso' ? `<button class="btn-checkout" onclick="cambiaStatoPren(${p.id}, 'conclusa')">🚪 Check-out</button>` : ''}
+                    <button class="btn-modifica" onclick="modificaPrenotazione(${p.id})">✏️ Modifica</button>
                     <button class="btn-cancella" onclick="cancellaPren(${p.id})">🗑️</button>
                 </div>
             </div>
@@ -499,17 +497,33 @@ function renderPrenotazioni() {
     });
 }
 
-function apriPrenotazione() {
-    $('pren-id').value = ''; $('pren-nome').value = ''; $('pren-telefono').value = ''; $('pren-email').value = '';
-    $('pren-checkin').value = new Date().toISOString().slice(0,10);
-    const domani = new Date(); domani.setDate(domani.getDate()+1);
-    $('pren-checkout').value = domani.toISOString().slice(0,10);
-    $('pren-adulti').value = 1;
-    $('pren-prezzo-adulto').value = '';
-    $('pren-bambini-container').innerHTML = '';
+function apriPrenotazione(p = null) {
+    if(p) {
+        $('titolo-pren').textContent = 'Modifica Prenotazione';
+        $('pren-id').value = p.id; $('pren-nome').value = p.nome_ospite; $('pren-telefono').value = p.telefono || ''; $('pren-email').value = p.email || '';
+        $('pren-checkin').value = p.check_in; $('pren-checkout').value = p.check_out;
+        $('pren-adulti').value = p.adulti; $('pren-prezzo-adulto').value = p.prezzo_adulto || '';
+        $('pren-note').value = p.note || '';
+        $('pren-bambini-container').innerHTML = '';
+        if(p.bambini) p.bambini.forEach(b => aggiungiBambino('pren-bambini-container', b.eta, b.prezzo));
+    } else {
+        $('titolo-pren').textContent = 'Nuova Prenotazione';
+        $('pren-id').value = ''; $('pren-nome').value = ''; $('pren-telefono').value = ''; $('pren-email').value = '';
+        $('pren-checkin').value = new Date().toISOString().slice(0,10);
+        const domani = new Date(); domani.setDate(domani.getDate()+1);
+        $('pren-checkout').value = domani.toISOString().slice(0,10);
+        $('pren-adulti').value = 1; $('pren-prezzo-adulto').value = ''; $('pren-note').value = '';
+        $('pren-bambini-container').innerHTML = '';
+    }
     
     $('pren-camera').innerHTML = db.camere.sort((a,b)=>a.numero-b.numero).map(c => `<option value="${c.numero}">Cam ${c.numero} - ${c.tipo_esteso}</option>`).join('');
+    if(p) $('pren-camera').value = p.camera_numero;
     $('modal-pren').classList.add('active');
+}
+
+function modificaPrenotazione(id) {
+    const p = db.prenotazioni.find(x => x.id == id);
+    if(p) apriPrenotazione(p);
 }
 
 function salvaPrenotazione() {
@@ -569,17 +583,37 @@ function renderRichieste() {
                 <div class="info">📅 ${r.check_in ? formatData(r.check_in) : '—'} → ${r.check_out ? formatData(r.check_out) : '—'}</div>
                 <div class="info">👥 ${r.adulti} Adulti (€${r.prezzo_adulto}/gg)</div>
                 ${bambiniStr}
-                <div class="actions"><button class="btn-cancella" onclick="cancellaRichiesta(${r.id})">🗑️</button></div>
+                <div class="actions">
+                    <button class="btn-modifica" onclick="modificaRichiesta(${r.id})">✏️ Modifica</button>
+                    <button class="btn-cancella" onclick="cancellaRichiesta(${r.id})">🗑️</button>
+                    <button class="btn-checkin" onclick="trasformaInPrenotazione(${r.id})">➡️ Prenota</button>
+                </div>
             </div>
         `;
     });
 }
 
-function apriRichiesta() {
-    $('richiesta-id').value = ''; $('richiesta-nome').value = ''; $('richiesta-telefono').value = ''; $('richiesta-email').value = '';
-    $('richiesta-adulti').value = 1; $('richiesta-prezzo-adulto').value = '';
-    $('richiesta-bambini-container').innerHTML = '';
+function apriRichiesta(r = null) {
+    if(r) {
+        $('richiesta-id').value = r.id; $('richiesta-nome').value = r.nome; $('richiesta-telefono').value = r.telefono || ''; $('richiesta-email').value = r.email || '';
+        $('richiesta-checkin').value = r.check_in || ''; $('richiesta-checkout').value = r.check_out || '';
+        $('richiesta-adulti').value = r.adulti; $('richiesta-prezzo-adulto').value = r.prezzo_adulto || '';
+        $('richiesta-trattamento').value = r.trattamento || ''; $('richiesta-note').value = r.note || '';
+        $('richiesta-bambini-container').innerHTML = '';
+        if(r.bambini) r.bambini.forEach(b => aggiungiBambino('richiesta-bambini-container', b.eta, b.prezzo));
+    } else {
+        $('richiesta-id').value = ''; $('richiesta-nome').value = ''; $('richiesta-telefono').value = ''; $('richiesta-email').value = '';
+        $('richiesta-checkin').value = ''; $('richiesta-checkout').value = '';
+        $('richiesta-adulti').value = 1; $('richiesta-prezzo-adulto').value = '';
+        $('richiesta-trattamento').value = ''; $('richiesta-note').value = '';
+        $('richiesta-bambini-container').innerHTML = '';
+    }
     $('modal-richiesta').classList.add('active');
+}
+
+function modificaRichiesta(id) {
+    const r = db.richieste.find(x => x.id == id);
+    if(r) apriRichiesta(r);
 }
 
 function salvaRichiesta() {
@@ -604,6 +638,18 @@ function cancellaRichiesta(id) {
     if(!confirm('Sicuro?')) return;
     db.richieste = db.richieste.filter(r => r.id != id);
     salvaDati(); caricaTutto();
+}
+
+function trasformaInPrenotazione(id) {
+    const r = db.richieste.find(x => x.id == id);
+    if(!r) return;
+    const p = {
+        nome_ospite: r.nome, telefono: r.telefono, email: r.email,
+        check_in: r.check_in, check_out: r.check_out,
+        adulti: r.adulti, prezzo_adulto: r.prezzo_adulto,
+        bambini: r.bambini, note: "Trasformata da richiesta. " + (r.note || "")
+    };
+    apriPrenotazione(p);
 }
 
 // ============================================
