@@ -62,7 +62,7 @@
   .modal label { display: block; font-size: 13px; color: #555; margin-bottom: 4px; font-weight: 500; }
   .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-  /* HOME PAGE E AZIONI RAPIDE PIÙ GRASSE */
+  /* HOME PAGE E AZIONI RAPIDE */
   .home-wrap { max-width: 720px; margin: 0 auto; padding: 16px 0 20px; }
   .home-logo-grande { display: block; width: 140px; height: 140px; margin: 8px auto 16px; border-radius: 50%; box-shadow: 0 6px 20px rgba(37, 99, 235, 0.12); }
   .home-saluto { text-align: center; font-size: 22px; font-weight: 700; margin-bottom: 4px; }
@@ -92,10 +92,6 @@
 
   .ricerca-box { background:white; padding:12px 14px; border-radius:10px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
   .ricerca-box input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; }
-  
-  .filtri { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
-  .filtri button { padding: 8px 14px; border: 1px solid #ddd; background: white; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
-  .filtri button.attivo { background: #2563eb; color: white; border-color: #2563eb; }
   .info-occupazione { background: white; padding: 12px 16px; border-radius: 8px; margin-bottom: 12px; font-size: 14px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
 </style>
 </head>
@@ -129,15 +125,16 @@
             <div class="azione-icon">📄</div>
             <div class="azione-testo">Nuovo preventivo<small>Calcolo veloce al telefono</small></div>
         </button>
-        <button class="azione-rapida" onclick="esportaBackup()">
-            <div class="azione-icon" style="background:#ecfdf5;">💾</div>
-            <div class="azione-testo">Esporta Backup<small>Salva i dati su un file (Consigliato)</small></div>
+        
+        <!-- NUOVI PULSANTI EXCEL -->
+        <button class="azione-rapida" onclick="esportaExcel('prenotazioni')">
+            <div class="azione-icon" style="background:#ecfdf5;">📊</div>
+            <div class="azione-testo">Esporta Prenotazioni<small>Salva o invia file Excel</small></div>
         </button>
-        <button class="azione-rapida" onclick="document.getElementById('file-import').click()">
-            <div class="azione-icon" style="background:#fef2f2;">📥</div>
-            <div class="azione-testo">Importa Backup<small>Ripristina i dati da un file</small></div>
+        <button class="azione-rapida" onclick="esportaExcel('richieste')">
+            <div class="azione-icon" style="background:#fef2f2;">📊</div>
+            <div class="azione-testo">Esporta Richieste<small>Salva o invia file Excel</small></div>
         </button>
-        <input type="file" id="file-import" accept=".json" style="display:none;" onchange="importaBackup(event)">
       </div>
     </div>
 
@@ -554,7 +551,7 @@ function chiudiMan(id) {
 }
 
 // ============================================
-// PREVENTIVO, BACKUP E IMPORTAZIONE
+// PREVENTIVO
 // ============================================
 function aggiornaPreventivo() {
     const notti = calcolaNotti($('prev-dal').value, $('prev-al').value);
@@ -574,39 +571,52 @@ function inviaWhatsApp() { window.open(`https://wa.me/39${$('prev-tel').value.re
 function inviaEmail() { window.location.href = `mailto:${$('prev-email').value}?subject=Preventivo&body=${encodeURIComponent($('prev-testo').value)}`; }
 function stampaPreventivo() { const w = window.open('', '_blank'); w.document.write(`<pre>${$('prev-testo').value}</pre>`); w.print(); }
 
-// SALVATAGGIO SU FILE (BACKUP)
-function esportaBackup() {
-    const blob = new Blob([JSON.stringify(db, null, 2)], { type: "application/json" });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `backup_hotelcamay_${new Date().toISOString().slice(0,10)}.json`;
-    a.click();
-}
+// ============================================
+// ESPORTAZIONE EXCEL/CSV NATIVA
+// ============================================
+async function esportaExcel(tipo) {
+    let righe = [];
+    let nomeFile = "";
 
-// CARICAMENTO DA FILE (IMPORT)
-function importaBackup(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
+    if (tipo === 'prenotazioni') {
+        righe.push(['ID', 'Nome Ospite', 'Telefono', 'Email', 'Camera', 'Check-in', 'Check-out', 'Ospiti', 'Prezzo (€)', 'Stato']);
+        db.prenotazioni.forEach(p => {
+            righe.push([p.id, p.nome_ospite, p.telefono || '', p.email || '', p.camera_numero, p.check_in, p.check_out, p.num_ospiti, p.prezzo_totale || '', p.stato]);
+        });
+        nomeFile = `prenotazioni_${new Date().toISOString().slice(0,10)}.csv`;
+    } else {
+        righe.push(['ID', 'Nome', 'Telefono', 'Email', 'Dal', 'Al', 'Adulti', 'Bambini', 'Trattamento', 'Note']);
+        db.richieste.forEach(r => {
+            righe.push([r.id, r.nome, r.telefono || '', r.email || '', r.check_in || '', r.check_out || '', r.adulti, r.bambini, r.trattamento || '', r.note || '']);
+        });
+        nomeFile = `richieste_${new Date().toISOString().slice(0,10)}.csv`;
+    }
+
+    const contenutoCSV = '\uFEFF' + righe.map(r => r.map(campo => `"${String(campo).replace(/"/g, '""')}"`).join(',')).join('\n');
+
+    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem && window.Capacitor.Plugins.Share) {
         try {
-            const data = JSON.parse(e.target.result);
-            if (data.camere && data.prenotazioni) {
-                if(confirm("Vuoi davvero sovrascrivere i dati attuali con questo backup?")) {
-                    db = data;
-                    salvaDati();
-                    caricaTutto();
-                    alert("Backup ripristinato con successo!");
-                }
-            } else {
-                alert("File non valido.");
-            }
-        } catch (err) {
-            alert("Errore durante la lettura del file.");
+            const { uri } = await window.Capacitor.Plugins.Filesystem.writeFile({
+                path: nomeFile,
+                data: contenutoCSV,
+                directory: 'CACHE',
+                encoding: 'utf8'
+            });
+            await window.Capacitor.Plugins.Share.share({
+                title: 'Esporta file Excel',
+                url: uri,
+                dialogTitle: 'Salva o invia il file'
+            });
+        } catch (e) {
+            alert("Errore durante l'esportazione: " + e.message);
         }
-    };
-    reader.readAsText(file);
-    event.target.value = ''; // Resetta l'input
+    } else {
+        const blob = new Blob([contenutoCSV], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = nomeFile;
+        link.click();
+    }
 }
 
 // AVVIO
