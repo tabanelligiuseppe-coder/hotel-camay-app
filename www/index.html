@@ -25,13 +25,34 @@
   .dot { width: 11px; height: 11px; border-radius: 50%; }
   
   .piano-titolo { font-size: 16px; font-weight: 700; margin: 20px 0 8px 0; color: #1f2937; }
-  .camere-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
-  .camera-card { background: white; border-radius: 10px; padding: 12px 10px; text-align: center; cursor: pointer; border-left: 5px solid #ccc; position: relative; }
-  .camera-card:active { transform: scale(0.96); }
-  .camera-card .numero { font-size: 24px; font-weight: 700; }
-  .camera-card .tipo { font-size: 10px; color: #888; margin-top: 2px; text-transform: uppercase; }
-  .camera-card .stato-label { font-size: 11px; margin-top: 5px; font-weight: 600; }
-  .camera-card .fm-badge { position: absolute; top: 6px; right: 6px; font-size: 14px; }
+  
+  /* GRIGLIA CALENDARIO PIANI */
+  .calendario-piani-wrap { overflow-x: auto; background: white; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); padding: 10px; margin-bottom: 15px; }
+  .calendario-grid { display: grid; grid-template-columns: 90px repeat(7, minmax(110px, 1fr)); gap: 2px; background: #e5e7eb; border: 1px solid #e5e7eb; min-width: 800px; }
+  .calendario-header { background: #f9fafb; padding: 8px 4px; font-weight: 700; text-align: center; font-size: 11px; color: #374151; }
+  
+  .calendario-camera { background: white; padding: 6px 4px; font-weight: 700; text-align: center; cursor: pointer; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+  .calendario-camera:active { background: #f3f4f6; }
+  .calendario-camera .cam-num { font-size: 15px; line-height: 1.1; }
+  .calendario-camera .cam-tipo { font-size: 9px; color: #6b7280; font-weight: 500; text-transform: uppercase; margin-top: 2px; line-height: 1.1; }
+  .calendario-camera .mini-stato { font-size: 9px; font-weight: 700; text-transform: uppercase; margin-top: 3px; padding: 1px 4px; border-radius: 4px; background: #f3f4f6; }
+  
+  .calendario-cella { background: white; padding: 4px; min-height: 50px; position: relative; cursor: pointer; }
+  .calendario-cella.vuota { background: #f0fdf4; }
+  .calendario-cella.vuota:active { background: #dcfce7; }
+  .calendario-evento { background: #fee2e2; color: #991b1b; padding: 4px; border-radius: 4px; font-size: 10px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-left: 3px solid #ef4444; height: 100%; display: flex; align-items: center; }
+
+  /* LISTA CAMERE LIBERE (NUOVA VISTA) */
+  .camere-libere-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
+  .camera-libera-card {
+    background: white; border-radius: 10px; padding: 15px; text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06); border-left: 5px solid #10b981;
+    cursor: pointer; transition: transform 0.1s;
+  }
+  .camera-libera-card:active { transform: scale(0.96); }
+  .camera-libera-card .numero { font-size: 24px; font-weight: 700; color: #1f2937; }
+  .camera-libera-card .tipo { font-size: 11px; color: #6b7280; text-transform: uppercase; margin-top: 4px; }
+  .camera-libera-card .stato { font-size: 11px; font-weight: 700; color: #10b981; margin-top: 8px; background: #ecfdf5; display: inline-block; padding: 2px 8px; border-radius: 10px; }
 
   .stato-libera { border-left-color: #10b981; } .stato-libera .stato-label { color: #10b981; }
   .stato-occupata { border-left-color: #ef4444; } .stato-occupata .stato-label { color: #ef4444; }
@@ -94,6 +115,26 @@
   .ricerca-box { background:white; padding:12px 14px; border-radius:10px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,0.06); }
   .ricerca-box input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; }
   .info-occupazione { background: white; padding: 12px 16px; border-radius: 8px; margin-bottom: 12px; font-size: 14px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+
+  /* BARRA DI RICERCA DATE NEL CALENDARIO */
+  .filtro-date-cal {
+    background: white; padding: 12px 14px; border-radius: 10px;
+    margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+  }
+  .filtro-date-cal input[type="date"] {
+    padding: 8px 10px; border: 1px solid #ddd; border-radius: 8px;
+    font-size: 14px; flex: 1; min-width: 130px; font-family: inherit;
+  }
+  .filtro-date-cal button {
+    padding: 8px 14px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .filtro-date-cal .btn-cerca { background: #2563eb; color: white; }
+  .filtro-date-cal .btn-reset { background: #f3f4f6; color: #333; }
+  .riepilogo-disp {
+    margin-top: 10px; padding: 10px 12px; background: #eff6ff; color: #1e40af;
+    border-radius: 8px; font-size: 13px; font-weight: 600; border-left: 4px solid #2563eb; width: 100%;
+  }
 </style>
 </head>
 <body>
@@ -122,11 +163,16 @@
         </div>
 
         <div class="home-sezione-titolo">Azioni rapide</div>
+        
+        <button class="azione-rapida" onclick="vaiA('richieste')">
+            <div class="azione-icon" style="background:#f3e8ff; color:#7e22ce;">📞</div>
+            <div class="azione-testo">Richieste Clienti<small>Gestisci le chiamate in arrivo</small></div>
+        </button>
+
         <button class="azione-rapida" onclick="vaiA('preventivo')">
             <div class="azione-icon">📄</div>
             <div class="azione-testo">Nuovo preventivo<small>Calcolo veloce al telefono</small></div>
         </button>
-        
         <button class="azione-rapida" onclick="esportaExcel('prenotazioni')">
             <div class="azione-icon" style="background:#ecfdf5;">📊</div>
             <div class="azione-testo">Esporta Prenotazioni<small>Salva o invia file Excel</small></div>
@@ -136,6 +182,24 @@
             <div class="azione-testo">Esporta Richieste<small>Salva o invia file Excel</small></div>
         </button>
       </div>
+    </div>
+
+    <!-- PIANO CAMERE (Calendario per piani) -->
+    <div id="sez-pianocamere" class="sezione">
+      <div class="info-occupazione"><div>Occupazione oggi: <strong id="info-occ">—</strong></div></div>
+      
+      <!-- BARRA DI RICERCA DATE -->
+      <div class="filtro-date-cal">
+        <span style="font-size:13px; font-weight:600; color:#374151; margin-right:4px;">📅 Cerca disponibilità:</span>
+        <input type="date" id="cal-dal">
+        <span style="color:#888;">→</span>
+        <input type="date" id="cal-al">
+        <button class="btn-cerca" id="cal-btn-cerca">Cerca</button>
+        <button class="btn-reset" id="cal-btn-reset">✖ Reset</button>
+      </div>
+
+      <!-- CONTENITORE VISUALIZZAZIONE -->
+      <div id="calendario-piani-container"></div>
     </div>
 
     <!-- PREVENTIVO -->
@@ -204,18 +268,6 @@
       <div id="pren-container"></div>
     </div>
 
-    <!-- CAMERE -->
-    <div id="sez-camere" class="sezione">
-      <div class="info-occupazione"><div>Occupazione oggi: <strong id="info-occ">—</strong></div></div>
-      <div class="legend">
-        <div class="legend-item"><span class="dot dot-libera"></span> Libera</div>
-        <div class="legend-item"><span class="dot dot-occupata"></span> Occupata</div>
-        <div class="legend-item"><span class="dot dot-da_pulire"></span> Da pulire</div>
-        <div class="legend-item">🌊 Fronte mare</div>
-      </div>
-      <div id="camere-container"></div>
-    </div>
-
     <!-- MANUTENZIONI -->
     <div id="sez-manutenzioni" class="sezione">
       <h2 style="font-size:18px; margin-bottom:12px;">📝 Manutenzioni</h2>
@@ -229,7 +281,7 @@
     <button data-sezione="preventivo" onclick="vaiA('preventivo')"><span class="icon-wrapper">📄</span>Preventivo</button>
     <button data-sezione="richieste" onclick="vaiA('richieste')"><span class="icon-wrapper">📞</span>Richieste</button>
     <button data-sezione="prenotazioni" onclick="vaiA('prenotazioni')"><span class="icon-wrapper">📅</span>Prenota</button>
-    <button data-sezione="camere" onclick="vaiA('camere')"><span class="icon-wrapper">🛏️</span>Camere</button>
+    <button data-sezione="pianocamere" onclick="vaiA('pianocamere')"><span class="icon-wrapper">🛏️</span>Piano Camere</button>
     <button data-sezione="manutenzioni" onclick="vaiA('manutenzioni')"><span class="icon-wrapper">📝</span>Manut.</button>
   </nav>
 </div>
@@ -327,6 +379,7 @@
 const DB_KEY = 'hotelcamay_data';
 let db = { camere: [], prenotazioni: [], manutenzioni: [], richieste: [] };
 let numeroCameraSelezionata = null;
+let filtroDateCalendario = null; // { dal, al } oppure null
 
 function salvaDati() { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
 
@@ -338,6 +391,17 @@ function caricaDatiLocali() {
         generaCamereIniziali(); 
         salvaDati(); 
     }
+}
+
+function aggiornaStatiCamere() {
+    const oggi = new Date().toISOString().slice(0, 10);
+    db.camere.forEach(cam => {
+        if (cam.stato === 'fuori_servizio' || cam.stato === 'da_pulire') return;
+        const prenAttiva = db.prenotazioni.find(p => 
+            p.camera_numero === cam.numero && p.stato !== 'cancellata' && oggi >= p.check_in && oggi < p.check_out
+        );
+        cam.stato = prenAttiva ? 'occupata' : 'libera';
+    });
 }
 
 function generaCamereIniziali() {
@@ -354,9 +418,6 @@ function generaCamereIniziali() {
     db.camere = camere;
 }
 
-// ============================================
-// FUNZIONI GENERALI
-// ============================================
 function $(id) { return document.getElementById(id); }
 function chiudiModal(id) { $(id).classList.remove('active'); }
 function formatData(d) { if(!d) return '—'; const [y,m,g]=d.split('-'); return `${g}/${m}/${y}`; }
@@ -367,19 +428,19 @@ function vaiA(sezione) {
     $(`sez-${sezione}`).classList.add('attiva');
     document.querySelectorAll('nav.bottom-nav button').forEach(b => b.classList.toggle('attivo', b.dataset.sezione === sezione));
     if (sezione === 'home') aggiornaHome();
+    if (sezione === 'pianocamere') renderCalendarioPiani();
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// ============================================
-// AVVIO E HOME
-// ============================================
 function caricaTutto() {
     caricaDatiLocali();
+    aggiornaStatiCamere();
+    salvaDati();
     aggiornaHome();
-    renderCamere();
     renderPrenotazioni();
     renderRichieste();
     renderManutenzioni();
+    renderCalendarioPiani();
     aggiornaOrologio();
 }
 
@@ -405,39 +466,164 @@ function aggiornaOrologio() {
 setInterval(aggiornaOrologio, 30000);
 
 // ============================================
-// CAMERE (LOGICA SEMPLIFICATA E DIRETTA)
+// CALENDARIO PIANI E RICERCA DATE
 // ============================================
-function renderCamere() {
-    const container = $('camere-container'); container.innerHTML = '';
+$('cal-btn-cerca').addEventListener('click', () => {
+    const dal = $('cal-dal').value;
+    const al = $('cal-al').value;
+    if (!dal || !al) { alert('Inserisci entrambe le date'); return; }
+    if (dal >= al) { alert('La data di fine deve essere successiva a quella di inizio'); return; }
+    
+    filtroDateCalendario = { dal, al };
+    
+    // Calcola quante e quali camere sono libere
+    const camereLibere = db.camere.filter(c => {
+        // La camera è libera se NON ha nessuna prenotazione che si sovrappone al periodo
+        return !db.prenotazioni.some(p => 
+            p.camera_numero === c.numero && 
+            p.stato !== 'cancellata' && 
+            p.check_in < al && p.check_out > dal // Logica di sovrapposizione
+        );
+    });
+    
+    if (camereLibere.length === 0) {
+        $('calendario-piani-container').innerHTML = `<div style="text-align:center; padding:40px; background:white; border-radius:10px;"><h3 style="color:#dc2626;">Nessuna camera disponibile</h3><p style="color:#666; margin-top:10px;">Tutte le camere sono occupate dal ${formatData(dal)} al ${formatData(al)}</p></div>`;
+        return;
+    }
+    
+    // Genera la lista visiva delle camere libere
+    renderCamereLibere(camereLibere, dal, al);
+});
+
+$('cal-btn-reset').addEventListener('click', () => {
+    filtroDateCalendario = null;
+    $('cal-dal').value = '';
+    $('cal-al').value = '';
+    renderCalendarioPiani();
+});
+
+function renderCamereLibere(camereLibere, dal, al) {
+    const container = $('calendario-piani-container');
+    container.innerHTML = '';
+    
+    container.innerHTML += `
+        <div class="riepilogo-disp" style="display:block; margin-bottom:15px;">
+            📅 <strong>${camereLibere.length} camere libere</strong> dal ${formatData(dal)} al ${formatData(al)}. Clicca su una camera per prenotarla.
+        </div>
+    `;
+
+    const piani = [1, 2, 3, 4, -1];
+    const nomiPiano = { '-1': 'Seminterrato', '1': '1° Piano', '2': '2° Piano', '3': '3° Piano', '4': '4° Piano' };
+
+    piani.forEach(p => {
+        const camsPiano = camereLibere.filter(c => c.piano === p).sort((a,b)=>a.numero-b.numero);
+        if(camsPiano.length === 0) return;
+
+        container.innerHTML += `<div class="piano-titolo">${nomiPiano[p]}</div>`;
+        container.innerHTML += `<div class="camere-libere-grid" id="grid-libere-${p}"></div>`;
+        const grid = $(`grid-libere-${p}`);
+
+        camsPiano.forEach(cam => {
+            const card = document.createElement('div');
+            card.className = 'camera-libera-card';
+            card.innerHTML = `
+                ${cam.fronte_mare ? '<span style="float:right; font-size:16px;">🌊</span>' : ''}
+                <div class="numero">${cam.numero}</div>
+                <div class="tipo">${cam.tipo_esteso}</div>
+                <div class="stato">LIBERA</div>
+            `;
+            // Se clicchi, ti apre direttamente il form prenotazione con quella camera e quelle date precompilate
+            card.onclick = () => {
+                apriNuovaPrenotazione();
+                $('pren-camera').value = cam.numero;
+                $('pren-checkin').value = dal;
+                $('pren-checkout').value = al;
+            };
+            grid.appendChild(card);
+        });
+    });
+}
+
+function renderCalendarioPiani() {
+    const container = $('calendario-piani-container'); 
+    container.innerHTML = '';
+    
+    // Se c'è un filtro date attivo, non mostriamo il calendario a griglia
+    if (filtroDateCalendario) return;
+
+    let giorni = [];
+    for (let i = 0; i < 7; i++) {
+        let d = new Date();
+        d.setDate(d.getDate() + i);
+        giorni.push(d);
+    }
+
     const piani = [1, 2, 3, 4, -1];
     const nomiPiano = { '-1': 'Seminterrato', '1': '1° Piano', '2': '2° Piano', '3': '3° Piano', '4': '4° Piano' };
     
     piani.forEach(p => {
         const cams = db.camere.filter(c => c.piano === p).sort((a,b)=>a.numero-b.numero);
         if(cams.length === 0) return;
-        
+
         const titolo = document.createElement('div');
         titolo.className = 'piano-titolo';
         titolo.textContent = nomiPiano[p];
         container.appendChild(titolo);
-        
+
+        const wrap = document.createElement('div');
+        wrap.className = 'calendario-piani-wrap';
         const grid = document.createElement('div');
-        grid.className = 'camere-grid';
+        grid.className = 'calendario-grid';
+        grid.style.gridTemplateColumns = `90px repeat(7, minmax(110px, 1fr))`;
         
-        cams.forEach(c => {
-            const card = document.createElement('div');
-            card.className = `camera-card stato-${c.stato}`;
-            card.innerHTML = `${c.fronte_mare ? '<div class="fm-badge">🌊</div>' : ''}<div class="numero">${c.numero}</div><div class="tipo">${c.tipo_esteso}</div><div class="stato-label">${c.stato.replace('_',' ')}</div>`;
-            
-            // IL CLICK PASSA DIRETTAMENTE IL NUMERO DELLA CAMERA
-            card.onclick = () => apriModalCamera(c.numero);
-            
-            grid.appendChild(card);
+        grid.innerHTML += `<div class="calendario-header" style="background:white; border:none;"></div>`;
+        giorni.forEach(g => {
+            const nomiGiorni = ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+            const stringaData = `${nomiGiorni[g.getDay()]}<br>${g.getDate()}/${g.getMonth()+1}`;
+            grid.innerHTML += `<div class="calendario-header">${stringaData}</div>`;
         });
-        container.appendChild(grid);
+
+        cams.forEach(cam => {
+            let statoColor = cam.stato === 'occupata' ? '#ef4444' : cam.stato === 'da_pulire' ? '#f59e0b' : cam.stato === 'fuori_servizio' ? '#6b7280' : '#10b981';
+            let statoLabel = cam.stato.replace('_',' ');
+            let onda = cam.fronte_mare ? ' 🌊' : '';
+            
+            grid.innerHTML += `
+                <div class="calendario-camera" onclick="apriModalCamera(${cam.numero})">
+                    <div class="cam-num" style="color:${statoColor}">${cam.numero}${onda}</div>
+                    <div class="cam-tipo">${cam.tipo_esteso}</div>
+                    <div class="mini-stato" style="color:${statoColor}">${statoLabel}</div>
+                </div>
+            `;
+            
+            giorni.forEach(g => {
+                const dataStr = g.toISOString().slice(0, 10);
+                const pren = db.prenotazioni.find(p => 
+                    p.camera_numero === cam.numero && 
+                    p.stato !== 'cancellata' && 
+                    dataStr >= p.check_in && dataStr < p.check_out
+                );
+
+                if (pren) {
+                    grid.innerHTML += `
+                        <div class="calendario-cella">
+                            <div class="calendario-evento" title="${pren.nome_ospite}">${pren.nome_ospite}</div>
+                        </div>
+                    `;
+                } else {
+                    grid.innerHTML += `<div class="calendario-cella vuota" onclick="apriModalCamera(${cam.numero})"></div>`;
+                }
+            });
+        });
+        
+        wrap.appendChild(grid);
+        container.appendChild(wrap);
     });
 }
 
+// ============================================
+// CAMERE (Gestione stato)
+// ============================================
 function apriModalCamera(numero) {
     numeroCameraSelezionata = numero;
     $('cam-num').textContent = numero;
@@ -455,7 +641,7 @@ function cambiaStatoCamera(stato) {
 }
 
 // ============================================
-// GESTIONE BAMBINI (FUNZIONE CONDIVISA)
+// GESTIONE BAMBINI
 // ============================================
 function aggiungiBambino(containerId, eta = '', prezzo = '') {
     const container = $(containerId);
