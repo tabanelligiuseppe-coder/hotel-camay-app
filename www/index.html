@@ -12,7 +12,6 @@
   header h1 { font-size: 18px; display: flex; align-items: center; gap: 10px; }
   .logo-header { width: 32px; height: 32px; border-radius: 50%; }
   
-  /* NAV BAR PIÙ GRANDE E VISIBILE */
   nav.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-around; align-items: center; padding: 10px 0; z-index: 50; box-shadow: 0 -2px 10px rgba(0,0,0,0.06); }
   nav.bottom-nav button { flex: 1; background: none; border: none; cursor: pointer; padding: 4px 2px; font-size: 12px; color: #6b7280; display: flex; flex-direction: column; align-items: center; gap: 4px; font-weight: 600; }
   nav.bottom-nav button .icon-wrapper { font-size: 22px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s; }
@@ -52,7 +51,7 @@
 
   .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 100; overflow-y: auto; }
   .modal-overlay.active { display: flex; }
-  .modal { background: white; border-radius: 12px; padding: 24px; width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto; }
+  .modal { background: white; border-radius: 12px; padding: 24px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
   .modal h2 { margin-bottom: 16px; font-size: 20px; }
   .modal-stato-btn { width: 100%; padding: 14px; margin-bottom: 8px; border: 2px solid #e5e7eb; background: white; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 12px; }
   .modal-stato-btn[data-stato="pulita"] { background: #ecfdf5; color: #065f46; }
@@ -62,7 +61,10 @@
   .modal label { display: block; font-size: 13px; color: #555; margin-bottom: 4px; font-weight: 500; }
   .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-  /* HOME PAGE E AZIONI RAPIDE */
+  /* STILI PER I BAMBINI EXTRA */
+  .bambino-riga { display: grid; grid-template-columns: 1fr 80px 30px; gap: 8px; margin-bottom: 8px; align-items: center; }
+  .btn-rimuovi-bimbo { background: #fee2e2; color: #dc2626; border: none; border-radius: 6px; height: 38px; cursor: pointer; font-weight: bold; font-size: 16px; }
+
   .home-wrap { max-width: 720px; margin: 0 auto; padding: 16px 0 20px; }
   .home-logo-grande { display: block; width: 140px; height: 140px; margin: 8px auto 16px; border-radius: 50%; box-shadow: 0 6px 20px rgba(37, 99, 235, 0.12); }
   .home-saluto { text-align: center; font-size: 22px; font-weight: 700; margin-bottom: 4px; }
@@ -126,7 +128,6 @@
             <div class="azione-testo">Nuovo preventivo<small>Calcolo veloce al telefono</small></div>
         </button>
         
-        <!-- NUOVI PULSANTI EXCEL -->
         <button class="azione-rapida" onclick="esportaExcel('prenotazioni')">
             <div class="azione-icon" style="background:#ecfdf5;">📊</div>
             <div class="azione-testo">Esporta Prenotazioni<small>Salva o invia file Excel</small></div>
@@ -146,7 +147,7 @@
           <label>Nome cliente</label><input type="text" id="prev-nome">
           <div class="row"><div><label>Cellulare</label><input type="tel" id="prev-tel"></div><div><label>Email</label><input type="email" id="prev-email"></div></div>
           <div class="row"><div><label>Dal *</label><input type="date" id="prev-dal"></div><div><label>Al *</label><input type="date" id="prev-al"></div></div>
-          <label>Numero ospiti *</label><input type="number" id="prev-ospiti" value="2" min="1">
+          
           <label>Trattamento *</label>
           <select id="prev-trattamento">
             <option value="Bed & Breakfast">Bed & Breakfast</option>
@@ -154,8 +155,24 @@
             <option value="Pensione Completa">Pensione Completa</option>
             <option value="All Inclusive">All Inclusive</option>
           </select>
-          <label>Prezzo al giorno a persona (€) *</label><input type="number" id="prev-prezzo" step="0.50" min="0">
+
+          <!-- ADULTI -->
+          <div class="row" style="margin-top:12px;">
+            <div><label>N. Adulti</label><input type="number" id="prev-adulti" value="2" min="1"></div>
+            <div><label>Prezzo a Adulto (€/gg)</label><input type="number" id="prev-prezzo-adulto" step="0.50" min="0"></div>
+          </div>
+
+          <!-- BAMBINI -->
+          <div style="margin-top:16px; border-top:1px dashed #ddd; padding-top:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <label style="margin:0; font-size:14px; font-weight:700;">Bambini (opzionale)</label>
+              <button type="button" onclick="aggiungiBambino('prev-bambini-container')" style="background:#e0e7ff; color:#3730a3; border:none; padding:6px 10px; border-radius:6px; font-weight:bold; font-size:12px; cursor:pointer;">➕ Aggiungi</button>
+            </div>
+            <div id="prev-bambini-container"></div>
+          </div>
+
           <label>Note</label><textarea id="prev-note" rows="2"></textarea>
+          
           <div class="prev-riepilogo" id="prev-riepilogo"><div>Compila i campi per vedere il calcolo...</div></div>
         </div>
         <div class="prev-form-card">
@@ -240,8 +257,22 @@
     <label>Email</label><input type="email" id="pren-email">
     <div class="row"><div><label>Check-in *</label><input type="date" id="pren-checkin"></div><div><label>Check-out *</label><input type="date" id="pren-checkout"></div></div>
     <label>Camera *</label><select id="pren-camera"></select>
-    <div class="row"><div><label>Ospiti</label><input type="number" id="pren-ospiti" value="1"></div><div><label>Prezzo €</label><input type="number" id="pren-prezzo" step="0.01"></div></div>
+    
+    <div class="row" style="margin-top:12px;">
+      <div><label>N. Adulti</label><input type="number" id="pren-adulti" value="1" min="1"></div>
+      <div><label>Prezzo a Adulto (€/gg)</label><input type="number" id="pren-prezzo-adulto" step="0.50" min="0"></div>
+    </div>
+
+    <div style="margin-top:16px; border-top:1px dashed #ddd; padding-top:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <label style="margin:0; font-size:14px; font-weight:700;">Bambini (opzionale)</label>
+        <button type="button" onclick="aggiungiBambino('pren-bambini-container')" style="background:#e0e7ff; color:#3730a3; border:none; padding:6px 10px; border-radius:6px; font-weight:bold; font-size:12px; cursor:pointer;">➕ Aggiungi</button>
+      </div>
+      <div id="pren-bambini-container"></div>
+    </div>
+
     <label>Note</label><textarea id="pren-note" rows="2"></textarea>
+    
     <div style="display:flex; gap:8px; margin-top:16px;">
       <button class="chiudi" style="flex:1;" onclick="chiudiModal('modal-pren')">Annulla</button>
       <button class="btn-primary" style="flex:2; margin:0;" onclick="salvaPrenotazione()">Salva</button>
@@ -256,8 +287,20 @@
     <label>Nome *</label><input type="text" id="richiesta-nome">
     <div class="row"><div><label>Cellulare *</label><input type="tel" id="richiesta-telefono"></div><div><label>Email</label><input type="email" id="richiesta-email"></div></div>
     <div class="row"><div><label>Dal</label><input type="date" id="richiesta-checkin"></div><div><label>Al</label><input type="date" id="richiesta-checkout"></div></div>
-    <div class="row"><div><label>Adulti</label><input type="number" id="richiesta-adulti" value="2"></div><div><label>Bambini</label><input type="number" id="richiesta-bambini" value="0"></div></div>
-    <label>Età bambini</label><input type="text" id="richiesta-eta">
+    
+    <div class="row" style="margin-top:12px;">
+      <div><label>N. Adulti</label><input type="number" id="richiesta-adulti" value="1" min="1"></div>
+      <div><label>Prezzo a Adulto (€/gg)</label><input type="number" id="richiesta-prezzo-adulto" step="0.50" min="0"></div>
+    </div>
+
+    <div style="margin-top:16px; border-top:1px dashed #ddd; padding-top:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <label style="margin:0; font-size:14px; font-weight:700;">Bambini (opzionale)</label>
+        <button type="button" onclick="aggiungiBambino('richiesta-bambini-container')" style="background:#e0e7ff; color:#3730a3; border:none; padding:6px 10px; border-radius:6px; font-weight:bold; font-size:12px; cursor:pointer;">➕ Aggiungi</button>
+      </div>
+      <div id="richiesta-bambini-container"></div>
+    </div>
+
     <label>Trattamento</label>
     <select id="richiesta-trattamento"><option value="">Da decidere</option><option value="Bed & Breakfast">B&B</option><option value="Mezza Pensione">Mezza Pensione</option><option value="Pensione Completa">Pensione Completa</option><option value="All Inclusive">All Inclusive</option></select>
     <label>Note</label><textarea id="richiesta-note" rows="2"></textarea>
@@ -292,8 +335,12 @@ function salvaDati() { localStorage.setItem(DB_KEY, JSON.stringify(db)); }
 
 function caricaDatiLocali() {
     const salvato = localStorage.getItem(DB_KEY);
-    if (salvato) { db = JSON.parse(salvato); } 
-    else { generaCamereIniziali(); salvaDati(); }
+    if (salvato) { 
+        db = JSON.parse(salvato); 
+    } else { 
+        generaCamereIniziali(); 
+        salvaDati(); 
+    }
 }
 
 function generaCamereIniziali() {
@@ -395,6 +442,33 @@ function cambiaStatoCamera(stato) {
 }
 
 // ============================================
+// GESTIONE BAMBINI (FUNZIONE CONDIVISA)
+// ============================================
+function aggiungiBambino(containerId) {
+    const container = $(containerId);
+    const div = document.createElement('div');
+    div.className = 'bambino-riga';
+    div.innerHTML = `
+        <input type="text" placeholder="Età (es. 5 anni)" class="bimbo-eta" style="margin:0;">
+        <input type="number" placeholder="€/gg" class="bimbo-prezzo" step="0.50" min="0" style="margin:0;">
+        <button type="button" class="btn-rimuovi-bimbo" onclick="this.parentElement.remove(); aggiornaPreventivo();">✕</button>
+    `;
+    container.appendChild(div);
+    div.querySelectorAll('input').forEach(el => el.addEventListener('input', aggiornaPreventivo));
+}
+
+function leggiBambini(containerId) {
+    const container = $(containerId);
+    let bambini = [];
+    container.querySelectorAll('.bambino-riga').forEach(riga => {
+        const eta = riga.querySelector('.bimbo-eta').value.trim();
+        const prezzo = parseFloat(riga.querySelector('.bimbo-prezzo').value) || 0;
+        if (prezzo > 0) bambini.push({ eta, prezzo });
+    });
+    return bambini;
+}
+
+// ============================================
 // PRENOTAZIONI
 // ============================================
 function renderPrenotazioni() {
@@ -405,6 +479,7 @@ function renderPrenotazioni() {
     if(ricerca) lista = lista.filter(p => p.nome_ospite.toLowerCase().includes(ricerca));
 
     lista.sort((a,b) => new Date(b.check_in) - new Date(a.check_in)).forEach(p => {
+        const bambiniStr = p.bambini && p.bambini.length > 0 ? `<div class="info">👶 ${p.bambini.map(b => b.eta ? `${b.eta} (€${b.prezzo})` : `Bambino (€${b.prezzo})`).join(', ')}</div>` : '';
         container.innerHTML += `
             <div class="pren-card">
                 <div class="intestazione">
@@ -412,6 +487,8 @@ function renderPrenotazioni() {
                     <div class="camera-badge">Cam ${p.camera_numero}</div>
                 </div>
                 <div class="info">📅 ${formatData(p.check_in)} → ${formatData(p.check_out)}</div>
+                <div class="info">👥 ${p.adulti} Adulti (€${p.prezzo_adulto}/gg)</div>
+                ${bambiniStr}
                 <div class="actions">
                     ${p.stato === 'confermata' ? `<button class="btn-checkin" onclick="cambiaStatoPren(${p.id}, 'in_corso')">✅ Check-in</button>` : ''}
                     ${p.stato === 'in_corso' ? `<button class="btn-checkout" onclick="cambiaStatoPren(${p.id}, 'conclusa')">🚪 Check-out</button>` : ''}
@@ -427,6 +504,9 @@ function apriPrenotazione() {
     $('pren-checkin').value = new Date().toISOString().slice(0,10);
     const domani = new Date(); domani.setDate(domani.getDate()+1);
     $('pren-checkout').value = domani.toISOString().slice(0,10);
+    $('pren-adulti').value = 1;
+    $('pren-prezzo-adulto').value = '';
+    $('pren-bambini-container').innerHTML = '';
     
     $('pren-camera').innerHTML = db.camere.sort((a,b)=>a.numero-b.numero).map(c => `<option value="${c.numero}">Cam ${c.numero} - ${c.tipo_esteso}</option>`).join('');
     $('modal-pren').classList.add('active');
@@ -437,8 +517,10 @@ function salvaPrenotazione() {
     const dati = {
         nome_ospite: $('pren-nome').value, telefono: $('pren-telefono').value, email: $('pren-email').value,
         check_in: $('pren-checkin').value, check_out: $('pren-checkout').value,
-        camera_numero: parseInt($('pren-camera').value), num_ospiti: parseInt($('pren-ospiti').value),
-        prezzo_totale: parseFloat($('pren-prezzo').value) || null, note: $('pren-note').value
+        camera_numero: parseInt($('pren-camera').value), 
+        adulti: parseInt($('pren-adulti').value), prezzo_adulto: parseFloat($('pren-prezzo-adulto').value) || 0,
+        bambini: leggiBambini('pren-bambini-container'),
+        note: $('pren-note').value
     };
     if(id) {
         const idx = db.prenotazioni.findIndex(p => p.id == id);
@@ -479,11 +561,14 @@ function renderRichieste() {
     if(ricerca) lista = lista.filter(r => r.nome.toLowerCase().includes(ricerca) || (r.telefono && r.telefono.includes(ricerca)));
 
     lista.sort((a,b)=>b.id - a.id).forEach(r => {
+        const bambiniStr = r.bambini && r.bambini.length > 0 ? `<div class="info">👶 ${r.bambini.map(b => b.eta ? `${b.eta} (€${b.prezzo})` : `Bambino (€${b.prezzo})`).join(', ')}</div>` : '';
         container.innerHTML += `
             <div class="pren-card" style="border-left-color: #8b5cf6;">
                 <div class="intestazione"><div class="nome">${r.nome}</div><div class="camera-badge" style="color:#7e22ce; background:#f3e8ff;">Richiesta</div></div>
                 <div class="info">📞 ${r.telefono} · 📧 ${r.email || '—'}</div>
-                <div class="info">👥 ${r.adulti} Adulti, ${r.bambini} Bambini</div>
+                <div class="info">📅 ${r.check_in ? formatData(r.check_in) : '—'} → ${r.check_out ? formatData(r.check_out) : '—'}</div>
+                <div class="info">👥 ${r.adulti} Adulti (€${r.prezzo_adulto}/gg)</div>
+                ${bambiniStr}
                 <div class="actions"><button class="btn-cancella" onclick="cancellaRichiesta(${r.id})">🗑️</button></div>
             </div>
         `;
@@ -492,6 +577,8 @@ function renderRichieste() {
 
 function apriRichiesta() {
     $('richiesta-id').value = ''; $('richiesta-nome').value = ''; $('richiesta-telefono').value = ''; $('richiesta-email').value = '';
+    $('richiesta-adulti').value = 1; $('richiesta-prezzo-adulto').value = '';
+    $('richiesta-bambini-container').innerHTML = '';
     $('modal-richiesta').classList.add('active');
 }
 
@@ -500,8 +587,9 @@ function salvaRichiesta() {
     const dati = {
         nome: $('richiesta-nome').value, telefono: $('richiesta-telefono').value, email: $('richiesta-email').value,
         check_in: $('richiesta-checkin').value, check_out: $('richiesta-checkout').value,
-        adulti: parseInt($('richiesta-adulti').value), bambini: parseInt($('richiesta-bambini').value),
-        eta_bambini: $('richiesta-eta').value, trattamento: $('richiesta-trattamento').value, note: $('richiesta-note').value
+        adulti: parseInt($('richiesta-adulti').value), prezzo_adulto: parseFloat($('richiesta-prezzo-adulto').value) || 0,
+        bambini: leggiBambini('richiesta-bambini-container'),
+        trattamento: $('richiesta-trattamento').value, note: $('richiesta-note').value
     };
     if(id) {
         const idx = db.richieste.findIndex(r => r.id == id);
@@ -555,16 +643,30 @@ function chiudiMan(id) {
 // ============================================
 function aggiornaPreventivo() {
     const notti = calcolaNotti($('prev-dal').value, $('prev-al').value);
-    const ospiti = parseInt($('prev-ospiti').value) || 0;
-    const prezzo = parseFloat($('prev-prezzo').value) || 0;
-    const totale = notti * ospiti * prezzo;
+    const adulti = parseInt($('prev-adulti').value) || 0;
+    const prezzoAd = parseFloat($('prev-prezzo-adulto').value) || 0;
+    const bambini = leggiBambini('prev-bambini-container');
     
-    if(notti > 0 && prezzo > 0) {
-        $('prev-riepilogo').innerHTML = `Soggiorno: <strong>€ ${totale.toFixed(2)}</strong><div class="prev-totale">TOTALE: € ${totale.toFixed(2)}</div>`;
-        $('prev-testo').value = `HOTEL CAMAY ★★\nRiccione\nTel: 0541 641443\n\nPREVENTIVO\nCliente: ${$('prev-nome').value}\nPeriodo: ${formatData($('prev-dal').value)} -> ${formatData($('prev-al').value)}\nTrattamento: ${$('prev-trattamento').value}\n\nTOTALE: € ${totale.toFixed(2)}\n\n(La tassa di soggiorno non è inclusa)`;
+    let totaleAdulti = notti * adulti * prezzoAd;
+    let totaleBambini = bambini.reduce((sum, b) => sum + (notti * b.prezzo), 0);
+    let totale = totaleAdulti + totaleBambini;
+
+    if(notti > 0) {
+        $('prev-riepilogo').innerHTML = `
+            Adulti: ${adulti} × €${prezzoAd} × ${notti} notti = <strong>€ ${totaleAdulti.toFixed(2)}</strong><br>
+            ${bambini.map(b => `Bambino ${b.eta ? b.eta : ''}: €${b.prezzo} × ${notti} notti = <strong>€ ${(b.prezzo*notti).toFixed(2)}</strong>`).join('<br>')}
+            <div class="prev-totale">TOTALE: € ${totale.toFixed(2)}</div>
+        `;
+
+        let testoBambini = "";
+        if(bambini.length > 0) {
+            testoBambini = "\nDETTAGLIO BAMBINI:\n" + bambini.map(b => `- Bambino ${b.eta ? b.eta : ''}: €${b.prezzo} al giorno`).join('\n') + "\n";
+        }
+
+        $('prev-testo').value = `HOTEL CAMAY ★★\nRiccione\nTel: 0541 641443\n\nPREVENTIVO\nCliente: ${$('prev-nome').value}\nPeriodo: ${formatData($('prev-dal').value)} -> ${formatData($('prev-al').value)}\nTrattamento: ${$('prev-trattamento').value}\n\nDETTAGLIO:\n- Adulti: ${adulti} × €${prezzoAd}/gg\n${testoBambini}\nTOTALE: € ${totale.toFixed(2)}\n\n(La tassa di soggiorno non è inclusa)`;
     }
 }
-document.querySelectorAll('#prev-dal, #prev-al, #prev-ospiti, #prev-prezzo, #prev-nome, #prev-trattamento').forEach(el => el.addEventListener('input', aggiornaPreventivo));
+document.querySelectorAll('#prev-dal, #prev-al, #prev-adulti, #prev-prezzo-adulto, #prev-nome, #prev-trattamento').forEach(el => el.addEventListener('input', aggiornaPreventivo));
 
 function copiaPreventivo() { navigator.clipboard.writeText($('prev-testo').value); alert('Copiato!'); }
 function inviaWhatsApp() { window.open(`https://wa.me/39${$('prev-tel').value.replace(/\\D/g, '')}?text=${encodeURIComponent($('prev-testo').value)}`, '_blank'); }
@@ -579,15 +681,17 @@ async function esportaExcel(tipo) {
     let nomeFile = "";
 
     if (tipo === 'prenotazioni') {
-        righe.push(['ID', 'Nome Ospite', 'Telefono', 'Email', 'Camera', 'Check-in', 'Check-out', 'Ospiti', 'Prezzo (€)', 'Stato']);
+        righe.push(['ID', 'Nome', 'Telefono', 'Email', 'Camera', 'Check-in', 'Check-out', 'Adulti', 'Prezzo Adulto', 'Bambini', 'Stato']);
         db.prenotazioni.forEach(p => {
-            righe.push([p.id, p.nome_ospite, p.telefono || '', p.email || '', p.camera_numero, p.check_in, p.check_out, p.num_ospiti, p.prezzo_totale || '', p.stato]);
+            const bimbiStr = p.bambini ? p.bambini.map(b => `${b.eta || 'Bimbo'} (€${b.prezzo})`).join(' | ') : '';
+            righe.push([p.id, p.nome_ospite, p.telefono || '', p.email || '', p.camera_numero, p.check_in, p.check_out, p.adulti, p.prezzo_adulto || 0, bimbiStr, p.stato]);
         });
         nomeFile = `prenotazioni_${new Date().toISOString().slice(0,10)}.csv`;
     } else {
-        righe.push(['ID', 'Nome', 'Telefono', 'Email', 'Dal', 'Al', 'Adulti', 'Bambini', 'Trattamento', 'Note']);
+        righe.push(['ID', 'Nome', 'Telefono', 'Email', 'Dal', 'Al', 'Adulti', 'Prezzo Adulto', 'Bambini', 'Trattamento', 'Note']);
         db.richieste.forEach(r => {
-            righe.push([r.id, r.nome, r.telefono || '', r.email || '', r.check_in || '', r.check_out || '', r.adulti, r.bambini, r.trattamento || '', r.note || '']);
+            const bimbiStr = r.bambini ? r.bambini.map(b => `${b.eta || 'Bimbo'} (€${b.prezzo})`).join(' | ') : '';
+            righe.push([r.id, r.nome, r.telefono || '', r.email || '', r.check_in || '', r.check_out || '', r.adulti, r.prezzo_adulto || 0, bimbiStr, r.trattamento || '', r.note || '']);
         });
         nomeFile = `richieste_${new Date().toISOString().slice(0,10)}.csv`;
     }
